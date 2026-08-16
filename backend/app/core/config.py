@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:5173"
 
     ENVIRONMENT: Literal["dev", "prod"] = "dev"
+
+    # LLM persona engine (Step 20+). Provider-agnostic by design -- the SRS
+    # permits either an API or an open-source model; only the API key
+    # variable matching LLM_PROVIDER needs to be set.
+    LLM_PROVIDER: Literal["anthropic"] = "anthropic"
+    ANTHROPIC_API_KEY: Optional[str] = None
+    ANTHROPIC_MODEL: str = "claude-sonnet-5"
 
     @property
     def cors_origins_list(self) -> list[str]:

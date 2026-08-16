@@ -1054,6 +1054,13 @@ Immediately after Step 19.
 #### Objective
 Give the persona-reaction step (Step 21) a pluggable LLM backend — the SRS explicitly permits either an API or an open-source model (PRD §14, PROJECT_CONTEXT.md's explicit note that this project allows external LLM API usage) — without hardcoding one vendor.
 
+**Status: ⚠️ Completed with one verification gap — documented honestly below, not glossed over.**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- Concrete provider: Anthropic (`anthropic` SDK), selected via `LLM_PROVIDER` (currently the only implemented option, matching the plan's own example) — `ANTHROPIC_API_KEY`/`ANTHROPIC_MODEL` added to `Settings` and `.env.example`, read from environment only.
+- `prompt_templates.py` includes both prompt construction **and** response parsing (`parse_persona_reaction`) — not split from Step 21 — since the parsing logic is tightly coupled to the exact JSON schema the prompt itself demands; keeping them together avoids the schema being defined in one file and consumed in another with no shared source of truth. Handles a real, common LLM habit (wrapping JSON in a markdown code fence despite being told not to) rather than treating it as a hard failure, and clamps out-of-range `purchase_likelihood` values rather than silently accepting bad data.
+- **Verification gap, disclosed rather than hidden**: the plan requires both a mocked-provider check *and* "a manual, real call against the configured provider" for full completion. I asked whether to add a real `ANTHROPIC_API_KEY`, and the user chose to skip real verification for now. **The mocked-provider path is fully verified** (prompt construction with real persona/scenario data; response parsing for clean JSON, markdown-fenced JSON, out-of-range clamping, and malformed input all confirmed correct; the "no API key configured" error path also confirmed to fail clearly rather than silently). **The real end-to-end API call has not been performed** — `get_llm_provider().complete()` against the live Anthropic API is unverified. This should be done before relying on Step 21+ in a live demo; add `ANTHROPIC_API_KEY` to `backend/.env` and re-verify whenever convenient.
+
 #### What to Develop
 An abstract `LLMProvider` interface with at least one concrete implementation, selected via configuration.
 
