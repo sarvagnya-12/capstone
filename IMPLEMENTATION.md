@@ -108,6 +108,13 @@ Phases 1–16 constitute the certified-scope MVP (Decision #1). Phase 17 is expl
 
 ### Step 1 — Initialize Version Control & Repository Layout
 
+**Status: ✅ Completed (2026-08-16).** Commit `3b79e25` — "Initial commit: project docs, archived dataset pipeline, and repo scaffold" (267 files).
+
+**Implementation notes / deviations from the literal step text above:**
+- **Initial commit scope was broadened.** The step text says to commit "the PRD/context docs and this file"; the actual initial commit also includes `Capstone Docs/*.pdf` (source requirement docs) and the archived dataset pipeline's source code (excluding its generated-data output). Rationale: nothing in the step said to exclude them, and the `.gitignore` carve-out for the pipeline's *data* only makes sense if its *code* stays tracked — excluding the whole archived folder would have made that distinction moot.
+- **`.gitignore` dataset-pipeline pattern was refined**, not a blanket `**/datasets/`. The archived pipeline's `datasets/**/raw/` subfolders contain small (4-row) hand-authored fixture CSVs (`sample_zappos.csv`, `sample_amazon_reviews.csv`, `sample_market.csv`, `sample_product_intelligence.csv`) that Step 13 explicitly depends on being "already present in the repo." A blanket `**/datasets/` ignore would have excluded these. The final `.gitignore` instead targets only the known *output* directories (`merged/`, `normalized/`, `versions/`, `assets/`, `quarantine/`, `master/`, and each service's `processed/`, `quarantine/`, `versions/`, `reports/`, `metadata/` subfolders, plus every `logs/`/`output/` directory) — all currently empty (`dataset_health_score: 0`), so nothing was lost by ignoring them, and the raw fixtures remain tracked.
+- **Added `.claude/settings.local.json` to `.gitignore`** (not specified in the step text) — machine-local tooling config, not called out explicitly, but consistent with a per-user config file, verified before excluding.
+
 #### When
 First step, before anything else. No code can be safely written without version control.
 
