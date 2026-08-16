@@ -433,6 +433,13 @@ Migration applies cleanly from empty DB to full schema and back; `get_db` depend
 #### When
 Immediately after Step 6 — same migration cycle, kept as a distinct step because these tables serve a different purpose (external reference data, not application state) and resolve a distinct open decision (#12).
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- No `IDMixin`/`TimestampMixin` reuse from Step 5 — each `ref_*` table uses the pipeline's own natural string key as its primary key (`product_id`, `image_id`, `review_id`, `market_record_id`, `intelligence_record_id`) rather than a synthetic UUID, since these mirror an external system's identifiers rather than being application-owned entities.
+- `market_type`/`price_type`/`availability` (enumerated in the pipeline's own `market_schema.json`) stored as plain `String`, not Postgres native enums — their vocabulary is owned/validated by the external pipeline, not this application, and avoids the enum-type migration friction just hit in Step 6.
+- Full round-trip (upgrade → downgrade → upgrade, both partial to `0001` and full to base) verified clean with no manual fixes needed this time.
+
 #### Objective
 Create the read-only tables that will hold the dataset-extraction pipeline's output once ingested (Phase 5), namespaced separately from application data so there's no ambiguity between "a product a user uploaded" and "a reference product from the pipeline's catalog."
 
