@@ -8,6 +8,8 @@ analysis).
 """
 
 import logging
+import random
+import re
 import uuid
 
 from sqlalchemy.orm import Session
@@ -19,12 +21,34 @@ from app.ml.llm.prompt_templates import (
 )
 from app.ml.llm.provider import LLMConfigurationError, get_llm_provider
 from app.models.feedback import Feedback
+from app.models.persona import Persona
 from app.models.product_variant import ProductVariant
 from app.models.simulation import Simulation
 
 logger = logging.getLogger(__name__)
 
 LLM_ERROR_PREFIX = "[LLM_ERROR]"
+
+# Crude keyword-based polarity heuristic used ONLY as a lightweight proxy for
+# check_consistency() below -- NOT real sentiment analysis (that's Step 23's
+# job, using an actual NLP model). Good enough to notice "this rerun reads
+# very differently," not a rigorous signal.
+_POSITIVE_WORDS = {
+    "love", "great", "amazing", "excellent", "good", "like", "want", "excited",
+    "impressed", "nice", "solid", "worth", "appealing",
+}
+_NEGATIVE_WORDS = {
+    "hate", "bad", "poor", "dislike", "disappointing", "overpriced", "unimpressed",
+    "skip", "pass", "expensive", "cheap", "unconvinced", "meh",
+}
+
+
+def _crude_sentiment_proxy(text: str) -> float:
+    words = re.findall(r"[a-z']+", text.lower())
+    positive = sum(1 for w in words if w in _POSITIVE_WORDS)
+    negative = sum(1 for w in words if w in _NEGATIVE_WORDS)
+    total = positive + negative
+    return 0.0 if total == 0 else (positive - negative) / total
 
 
 class SimulationNotFoundError(Exception):
@@ -91,3 +115,57 @@ def simulate_persona_reactions(db: Session, simulation_id: uuid.UUID, iteration_
     for feedback in feedback_rows:
         db.refresh(feedback)
     return feedback_rows
+
+
+def check_consistency(db: Session, simulation_id: uuid.UUID, sample_rate: float = 0.25) -> None:
+    """Re-runs a sample of this simulation's persona reactions and records
+    how much the result drifts from the original, as a lightweight
+    reliability signal -- not a rigorous statistical framework, same category
+    of documented limitation as Step 18's small-sample FID. Repeating every
+    pair would double LLM cost/latency for marginal signal, so only a sample
+    is re-run; unsampled rows are left with consistency_variance = NULL."""
+    simulation = db.get(Simulation, simulation_id)
+    if simulation is None:
+        raise SimulationNotFoundError(simulation_id)
+
+    all_feedback = db.query(Feedback).filter(Feedback.simulation_id == simulation_id).all()
+    sample_size = min(len(all_feedback), max(1, round(len(all_feedback) * sample_rate))) if all_feedback else 0
+    sampled = random.sample(all_feedback, sample_size)
+
+    try:
+        provider = get_llm_provider()
+    except LLMConfigurationError:
+        # Can't measure real consistency without a working provider -- leave
+        # consistency_variance NULL rather than fabricate a number.
+        logger.warning("check_consistency: no LLM provider configured, skipping re-check for simulation=%s", simulation_id)
+        return
+
+    variant_by_id = {v.id: v for v in db.query(ProductVariant).filter(ProductVariant.simulation_id == simulation_id)}
+    persona_by_id = {p.id: p for p in db.query(Persona).filter(Persona.id.in_({f.persona_id for f in sampled}))}
+
+    for feedback in sampled:
+        persona = persona_by_id[feedback.persona_id]
+        variant = variant_by_id[feedback.variant_id]
+
+        prompt = build_persona_reaction_prompt(
+            persona_prompt_template=persona.prompt_template,
+            variant_attributes=variant.attributes,
+            pricing_strategy=simulation.pricing_strategy,
+            target_demographic=simulation.target_demographic,
+            promotional_messaging=simulation.promotional_messaging,
+        )
+
+        try:
+            raw_completion = provider.complete(prompt)
+            parsed = parse_persona_reaction(raw_completion)
+        except (PersonaReactionParseError, Exception) as e:
+            logger.warning("Consistency re-check failed for feedback=%s: %s", feedback.id, e)
+            continue
+
+        likelihood_delta = abs(parsed["purchase_likelihood"] - feedback.purchase_likelihood)
+        sentiment_delta = abs(
+            _crude_sentiment_proxy(parsed["reaction_text"]) - _crude_sentiment_proxy(feedback.qualitative_text)
+        )
+        feedback.consistency_variance = (likelihood_delta + sentiment_delta) / 2
+
+    db.commit()

@@ -1140,6 +1140,14 @@ Immediately after Step 21.
 #### Objective
 Close the other half of Open Decision #5's evaluation gap: measure whether a persona's reaction is stable/reliable, not just present.
 
+**Status: ✅ Completed and fully verified (2026-08-17)** — this step's own required verification uses mocked providers explicitly, so it wasn't affected by the missing `ANTHROPIC_API_KEY` gap from Steps 20-21.
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- "Simple sentiment-score proxy" (the plan's own words) is a small keyword-based polarity heuristic (`_crude_sentiment_proxy`) — explicitly *not* real sentiment analysis (that's Step 23's actual NLP model), and documented in code as such. It exists only to give `check_consistency` a second, cheap signal alongside `purchase_likelihood` drift.
+- `consistency_variance` is the mean of the purchase-likelihood delta and the sentiment-proxy delta between the original and re-run response — a single number combining both signals, kept simple rather than storing two separate deltas.
+- When no LLM provider is configured, the function returns early and leaves `consistency_variance` `NULL` rather than fabricating a number — consistent with how Step 21 handles the same missing-key condition, just without needing per-row error markers here since there's no Feedback row being newly created.
+- **Verified exactly as the plan specifies, with both required mock scenarios**: seeded 8 real `Feedback` rows with a known baseline (`"Pretty good, I like it."`, `purchase_likelihood=0.5`). A deterministic mock (returns the identical response every time) produced `consistency_variance = 0.0` on all 4 sampled rows, with the other 4 correctly left `NULL`. An unstable mock (random text/likelihood each call) produced a mean variance of **1.17** on the same setup — a clear, large, correctly-oriented difference proving the mechanism actually detects inconsistency, not just that it runs.
+
 #### What to Develop
 A function that re-runs a sample of persona×variant pairs and computes output variance.
 
