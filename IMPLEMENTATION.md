@@ -1010,6 +1010,14 @@ After Step 14 (needs the segment-extraction logic) and independent of Phase 6 �
 #### Objective
 Build and seed the ~20-template curated persona library that resolves Decision #4.
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- `template_key`/`name`/`prompt_template`/`behavior_traits` are derived from each segment's `lifestyle` via a lookup table (`_BEHAVIOR_BY_LIFESTYLE`) covering the 8 lifestyle categories used in Step 14's baseline list, with a generic fallback behavior description for any `lifestyle` string not in that lookup — needed because real `ref_product_intelligence.target_lifestyle` values (once real data exists) aren't constrained to this controlled vocabulary, and this was verified directly (see below), not just assumed safe.
+- Seeding is idempotent via Postgres `ON CONFLICT (template_key) DO UPDATE`, matching the ingestion script's pattern from Step 13 — re-running after a baseline-list edit updates existing rows rather than duplicating them.
+- Real-segment `template_key`s get a short content-hash suffix appended, since two real segments could otherwise slugify to the same key (e.g. identical age/region with only a differing, unpredictable `lifestyle` string) — the baseline list doesn't need this since its combinations are hand-verified unique.
+- Verified all of: 20 rows seeded from the baseline list with 20 distinct `template_key`s; prompt/behavior content spot-checked against PRD Sec15's exact structure; re-running the script twice leaves the count at 20 (idempotent, not duplicated); and the real-segment path specifically, with 16 synthetic segments using an *unrecognized* lifestyle string, confirmed both the source switch (baseline -> real) and the default-behavior fallback engage correctly, not just the already-covered lifestyle names.
+
 #### What to Develop
 - The concrete list of persona templates (hand-authored baseline + real-data-derived, per Step 14).
 - A seeding script/migration data loader that inserts them into `personas`.
