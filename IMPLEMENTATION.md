@@ -538,6 +538,14 @@ Registration works, rejects duplicates and weak passwords, never returns or logs
 #### When
 Immediately after Step 8.
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- **`get_current_admin_user` deliberately left out of this step**, despite being named in Step 9's own summary line ("Files to Modify: `core/deps.py` (new) — `get_current_user`, `get_current_admin_user` dependencies") — Step 10 is the dedicated step for it with its own full Implementation Details/Verification, and Step 9's own Implementation Details paragraph only ever describes `get_current_user`'s behavior. Same kind of plan-internal overlap as Step 3's route list; resolved the same way (defer to the step that actually owns it).
+- `POST /login` uses FastAPI's standard `OAuth2PasswordRequestForm` (form-encoded `username`/`password`) rather than a JSON body — this is what makes `OAuth2PasswordBearer(tokenUrl=...)` and the auto-generated docs' "Authorize" button work correctly, and needed no new request schema, consistent with the step's own "no new files" note.
+- Added `GET /auth/me` (not explicitly listed in the plan) — rather than a throwaway test route to verify `get_current_user`, this is a genuinely useful, permanent endpoint the frontend will need in Step 32 anyway, and doubled as the verification target.
+- Verified beyond the plan's own suggestion: also explicitly tested wrong-password login (401), a corrupted token (401), and a token with a deliberately-past `exp` claim (401) — the completion criteria specifically calls out rejecting expired tokens, so this was tested directly rather than assumed from `python-jose`'s behavior.
+
 #### Objective
 Let a registered user obtain a session token, and give every future protected endpoint a reusable "current user" dependency — satisfying the NFR requirement for JWT-based secure login (PRD §10).
 

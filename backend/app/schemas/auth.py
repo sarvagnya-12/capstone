@@ -18,3 +18,8 @@ class UserResponse(BaseModel):
     org_name: str
     email: EmailStr
     role: UserRole
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
