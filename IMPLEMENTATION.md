@@ -1361,6 +1361,14 @@ After Phase 4 (needs a Product to configure a scenario for). Can be built in par
 #### Objective
 Implement FR#3 (PRD §9): capture pricing strategy, target demographic, and promotional messaging as structured simulation input.
 
+**Status: ✅ Completed and fully verified (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- `TargetDemographic`'s fields (`age_min`, `age_max`, `gender`, `income_segment`, `region`, `lifestyle`) deliberately mirror the `Persona` model's own column names exactly, not a generic `age_range` tuple — the plan's own text says "same shape as Persona attributes, enabling later matching/filtering," so matching field-for-field (not just conceptually) is what actually makes that possible.
+- Added `SimulationResponse` alongside the plan's explicitly-named `SimulationCreateRequest` — Step 28's endpoint will need a response schema regardless, and colocating it here avoids revisiting this file immediately.
+- The request schema's `pricing_strategy: list[PricingTier]` is a validation-time shape; the `Simulation` model's actual `pricing_strategy` column is a JSONB dict (`{"tiers": [...]}`, matching this session's own established test-data convention) — Step 28's endpoint is where these two shapes get bridged. A normal, expected difference between an API request shape and a storage shape, not an inconsistency.
+- Verified all cases the plan requires plus two more: valid payload parses with correctly-typed nested `PricingTier` objects; missing `product_id` rejected with a precise `('product_id',)` error location; a pricing tier missing `price` rejected with an exact `('pricing_strategy', 0, 'price')` location (not just "something in pricing_strategy is wrong"); empty `pricing_strategy` list rejected (`min_length=1`); out-of-range `variant_count` rejected; and omitted optional fields correctly default (`variant_count=4`, `max_iterations=None` meaning "use the model's default of 3", `persona_ids=None` meaning "Step 28 picks a representative sample").
+
 #### What to Develop
 Request/response schemas and validation for the scenario-configuration fields already present on the `Simulation` model (Step 5).
 
