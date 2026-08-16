@@ -1273,6 +1273,14 @@ After Steps 23–24 (needs sentiment and risk signals to optimize against).
 #### Objective
 Implement FR#8 (PRD §9) per Decision #3: heuristic/threshold weighting, not RL/Bayesian/genetic search.
 
+**Status: ✅ Completed and fully verified (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- **Real gap found and closed, beyond this step's own file list**: `propose_next_attributes()` would have had nothing downstream able to consume its output — Step 16's `generate_variants()` had no hook at all for "narrow toward a prior result," it always sampled from a fixed per-product anchor with a fixed radius. Extended `app/ml/gan/inference.py`'s `generate_variants()` with an optional `attribute_hints` parameter (`anchor_seed`, `perturbation_radius`, `hue_shift_center_degrees`, each independently falling back to the Step 16 default if absent) and threaded it through `gan_service.generate_variants_for_simulation()`. Without this, "latent-space nudging" would have been a proposal nobody could act on, not an actual mechanism.
+- Engagement proxy is reaction-text length normalized to a 200-character cap, per the plan's own suggested stand-in ("feedback length/specificity") absent an explicit engagement field.
+- Risk penalty is a flat per-rule-triggered deduction (`0.3` per distinct risk rule from Step 24), not weighted by severity — kept simple since there's no labeled data to justify a more elaborate scheme yet.
+- **Verified end-to-end, not just the scoring function in isolation**: built one simulation with a deliberately best variant (0.9 purchase likelihood, positive sentiment, no risk flags) and a deliberately worst one (0.1 likelihood, negative sentiment, one risk flag) — confirmed the best variant scored higher (0.673 vs -0.468) and `propose_next_attributes()` correctly picked the *best* variant's exact `anchor_seed`/hue, not the worst's. Then closed the full loop: fed that exact proposal into the newly-extended `generate_variants()` and confirmed the resulting 4 variants' hues clustered tightly at 195°-217.5° (a ±15° band around the proposed 210° center) instead of the undirected 0°-360° sweep Step 16 uses without hints — proving the nudge mechanism is real and consumed correctly, not just proposed and ignored.
+
 #### What to Develop
 A scoring/weighting function that combines sentiment, purchase-likelihood, engagement, and risk signals into a single per-variant score, and a "nudge" step that biases the next GAN generation round toward the attribute directions of the best-scoring variant(s).
 

@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 
 import numpy as np
 import torch
@@ -35,7 +36,9 @@ def _load_image_tensor(relative_path: str) -> torch.Tensor:
     return torch.from_numpy(array).permute(2, 0, 1)
 
 
-def generate_variants_for_simulation(db: Session, simulation_id: uuid.UUID, n: int) -> list[ProductVariant]:
+def generate_variants_for_simulation(
+    db: Session, simulation_id: uuid.UUID, n: int, attribute_hints: Optional[dict] = None
+) -> list[ProductVariant]:
     simulation = db.get(Simulation, simulation_id)
     if simulation is None:
         raise SimulationNotFoundError(simulation_id)
@@ -44,7 +47,7 @@ def generate_variants_for_simulation(db: Session, simulation_id: uuid.UUID, n: i
     if product is None:
         raise ProductNotFoundError(simulation.product_id)
 
-    results = generate_variants(str(product.id), n)
+    results = generate_variants(str(product.id), n, attribute_hints=attribute_hints)
 
     variant_rows = []
     fake_tensors = []

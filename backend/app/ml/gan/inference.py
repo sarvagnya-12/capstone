@@ -79,21 +79,43 @@ class VariantResult:
     attributes: dict
 
 
-def generate_variants(product_id: str, n: int) -> list[VariantResult]:
+def generate_variants(product_id: str, n: int, attribute_hints: Optional[dict] = None) -> list[VariantResult]:
     """Produces n variant images for a product: each is a distinct nearby
-    latent-space perturbation (layout/texture proxy) of a stable per-product
-    anchor, plus a hue-shift (color) spread evenly across the batch."""
+    latent-space perturbation (layout/texture proxy) of a shared anchor, plus
+    a hue-shift (color) spread across the batch.
+
+    attribute_hints (added Step 25, optional): lets Step 25's optimization
+    engine "nudge" the next generation round toward a prior best-scoring
+    variant's neighborhood, per the plan's own "latent-space nudging"
+    language -- without this hook, propose_next_attributes() would have
+    nothing downstream able to consume it. Recognized keys (all optional,
+    each independently falls back to the Step 16 default if absent):
+      - "anchor_seed": int -- replaces the default per-product hash anchor.
+      - "perturbation_radius": float -- replaces _PERTURBATION_RADIUS,
+        typically narrower to converge the search around a known-good point.
+      - "hue_shift_center_degrees": float -- center the per-variant hue
+        spread here instead of sweeping the full 0-360 range.
+    """
+    hints = attribute_hints or {}
     generator = _get_generator()
-    base_seed = _anchor_seed(product_id)
+    base_seed = hints.get("anchor_seed", _anchor_seed(product_id))
+    perturbation_radius = hints.get("perturbation_radius", _PERTURBATION_RADIUS)
+    hue_center = hints.get("hue_shift_center_degrees")
+
     z_anchor = torch.from_numpy(np.random.RandomState(base_seed).randn(1, generator.z_dim).astype("float32"))
 
     variants = []
     for i in range(n):
         perturbation_rng = np.random.RandomState(base_seed + i + 1)
-        z_variant = z_anchor + _PERTURBATION_RADIUS * torch.from_numpy(
+        z_variant = z_anchor + perturbation_radius * torch.from_numpy(
             perturbation_rng.randn(1, generator.z_dim).astype("float32")
         )
-        hue_shift = (i * 360 / max(n, 1)) % 360
+        if hue_center is None:
+            hue_shift = (i * 360 / max(n, 1)) % 360
+        else:
+            # Narrow spread (+/-15deg) around the proposed center, rather than
+            # the full 0-360 sweep used when there's no prior result to nudge toward.
+            hue_shift = (hue_center + (i - n / 2) * (30 / max(n, 1))) % 360
 
         img_tensor = generate_image_from_latent(generator, z_variant)
         image = _apply_hue_shift(img_tensor, hue_shift)
@@ -105,9 +127,10 @@ def generate_variants(product_id: str, n: int) -> list[VariantResult]:
                     "generation_method": "gan_latent_variation",
                     "anchor_seed": base_seed,
                     "perturbation_index": i,
-                    "perturbation_radius": _PERTURBATION_RADIUS,
+                    "perturbation_radius": perturbation_radius,
                     "color_hue_shift_degrees": hue_shift,
                     "branding_seed_offset": i,
+                    "nudged_from_prior_round": bool(hints),
                     "note": (
                         "layout/texture varied via nearby latent-space perturbation "
                         "(undifferentiated structural variation, not a disentangled "
