@@ -1098,6 +1098,14 @@ Immediately after Step 20, and after Step 16 (needs real `ProductVariant`s to re
 #### Objective
 Implement FR#5 (PRD §9): "Product variants, predefined personas → LLM-based persona reasoning → Simulated customer feedback."
 
+**Status: ⚠️ Completed with the same disclosed verification gap as Step 20.**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- Error marker for failed/unconfigured LLM calls is a prefixed string (`[LLM_ERROR] ...`) directly in `qualitative_text`, not a reuse of `risk_flags` — `risk_flags` is reserved for Step 24's actual risk-detection output; borrowing it for infrastructure errors would muddy that field's future meaning. `purchase_likelihood` defaults to `0.0` for error rows (a conservative, clearly-wrong-if-uninspected value, not left null against the model's non-nullable constraint).
+- `iteration_number` defaults to `0` via a keyword argument — Step 26 (iteration loop) is what will actually drive this value across repeated calls; not yet wired to anything real.
+- **Verified everything that doesn't require a real LLM response**: ran the real service against a real product/simulation with 3 personas × 4 variants — got exactly 12 `Feedback` rows (correct cross-product, no duplicates/gaps, confirmed directly in the DB), `sentiment_label` correctly still `NULL` on all of them (Step 23's job, not this one's), and **crucially, all 12 LLM calls failed (no API key configured) without aborting the simulation** — each was caught, logged, and recorded with the `[LLM_ERROR]` marker individually. This is a genuine, meaningful test of the per-pair failure-isolation design the plan requires, not a skipped check.
+- **Not verified** (same gap as Step 20, now surfacing here as predicted): "qualitative_text varies meaningfully across different personas reacting to the same variant" — this requires real LLM responses, which requires `ANTHROPIC_API_KEY`. All 12 rows currently contain the same generic error text, not differentiated persona reasoning. Re-run this step's verification once a key is configured.
+
 #### What to Develop
 A service that, for a given simulation, runs every assigned persona against every generated variant and produces a `Feedback` row per pair.
 
