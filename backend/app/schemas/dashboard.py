@@ -18,6 +18,14 @@ class SentimentBreakdown(BaseModel):
     unclassified: int  # sentiment_label still null -- e.g. an [LLM_ERROR] row
 
 
+class PersonaFeedbackEntry(BaseModel):
+    persona_id: uuid.UUID
+    persona_name: str
+    qualitative_text: str
+    purchase_likelihood: float
+    sentiment_label: Optional[str]
+
+
 class VariantAnalytics(BaseModel):
     variant_id: uuid.UUID
     rank: int
@@ -28,6 +36,11 @@ class VariantAnalytics(BaseModel):
     avg_engagement_score: Optional[float]
     risk_flags: list[dict]
     fid_score: Optional[float]
+    # Added alongside the frontend dashboard (Step 36): the plan's own
+    # "expandable per-persona feedback list" requirement needs the
+    # qualitative "why" behind the scores, which the aggregate sentiment
+    # counts above don't carry.
+    feedback: list[PersonaFeedbackEntry]
 
 
 class SimulationAnalyticsResponse(BaseModel):

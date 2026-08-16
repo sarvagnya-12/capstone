@@ -7,19 +7,27 @@ several endpoints itself.
 
 import uuid
 from collections import defaultdict
+from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user
 from app.db.session import get_db
 from app.models.feedback import Feedback, SentimentLabel
+from app.models.persona import Persona
 from app.models.product_variant import ProductVariant
 from app.models.recommendation import Recommendation
 from app.models.simulation import Simulation
 from app.models.user import User, UserRole
-from app.schemas.dashboard import SentimentBreakdown, SimulationAnalyticsResponse, VariantAnalytics
+from app.schemas.dashboard import (
+    PersonaFeedbackEntry,
+    SentimentBreakdown,
+    SimulationAnalyticsResponse,
+    VariantAnalytics,
+)
+from app.services import report_service
 from app.services.optimization_service import engagement_proxy
 
 router = APIRouter(prefix="/simulations", tags=["dashboard"])
@@ -79,6 +87,12 @@ def get_simulation_analytics(
     for row in feedback_rows:
         by_variant[row.variant_id].append(row)
 
+    persona_name_by_id = dict(
+        db.execute(
+            select(Persona.id, Persona.name).where(Persona.id.in_({row.persona_id for row in feedback_rows}))
+        ).all()
+    )
+
     variants_out: list[VariantAnalytics] = []
     for rank, variant_id in enumerate(variant_ids, start=1):
         rows = by_variant.get(variant_id, [])
@@ -103,6 +117,17 @@ def get_simulation_analytics(
 
         variant = db.get(ProductVariant, variant_id)
 
+        feedback_entries = [
+            PersonaFeedbackEntry(
+                persona_id=r.persona_id,
+                persona_name=persona_name_by_id.get(r.persona_id, "Unknown persona"),
+                qualitative_text=r.qualitative_text,
+                purchase_likelihood=r.purchase_likelihood,
+                sentiment_label=r.sentiment_label.value if r.sentiment_label else None,
+            )
+            for r in rows
+        ]
+
         variants_out.append(
             VariantAnalytics(
                 variant_id=variant_id,
@@ -114,6 +139,7 @@ def get_simulation_analytics(
                 avg_engagement_score=avg_engagement_score,
                 risk_flags=risk_flags,
                 fid_score=variant.fid_score if variant is not None else None,
+                feedback=feedback_entries,
             )
         )
 
@@ -131,4 +157,30 @@ def get_simulation_analytics(
             "max_iterations": simulation.max_iterations,
         },
         variants=variants_out,
+    )
+
+
+@router.get("/{simulation_id}/report")
+def get_simulation_report(
+    simulation_id: uuid.UUID,
+    format: Literal["csv", "pdf"] = "csv",
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Response:
+    _get_owned_simulation(db, current_user, simulation_id)
+
+    try:
+        if format == "csv":
+            content: bytes | str = report_service.generate_csv(db, simulation_id)
+            media_type = "text/csv"
+        else:
+            content = report_service.generate_pdf(db, simulation_id)
+            media_type = "application/pdf"
+    except report_service.ReportDataError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="simulation_{simulation_id}.{format}"'},
     )

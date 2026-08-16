@@ -3,17 +3,19 @@
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user
 from app.db.session import get_db
 from app.models.persona import Persona
+from app.models.product_variant import ProductVariant
 from app.models.recommendation import Recommendation
 from app.models.simulation import Simulation
 from app.models.user import User, UserRole
 from app.schemas.recommendation import RecommendationResponse
 from app.schemas.simulation import SimulationCreateRequest, SimulationResponse
-from app.services import simulation_orchestrator
+from app.services import simulation_orchestrator, storage_service
 from app.services.persona_service import select_representative_personas
 from app.services.product_service import ProductNotFoundError, get_product
 
@@ -72,6 +74,21 @@ def create_simulation(
     return simulation
 
 
+@router.get("", response_model=list[SimulationResponse])
+def list_my_simulations(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[Simulation]:
+    """Added alongside the frontend dashboard (Step 36): without this, a
+    user has no way to find their way back to a past simulation's results
+    except by having kept its UUID from creation -- same "list my own
+    resources" pattern as products.list_my_products()."""
+    query = db.query(Simulation).order_by(Simulation.created_at.desc())
+    if current_user.role != UserRole.ADMIN:
+        query = query.filter(Simulation.user_id == current_user.id)
+    return query.all()
+
+
 @router.get("/{simulation_id}/status", response_model=SimulationResponse)
 def get_simulation_status(
     simulation_id: uuid.UUID,
@@ -95,3 +112,26 @@ def get_simulation_recommendation(
             detail="No recommendation yet for this simulation (it may still be running, or may have failed)",
         )
     return recommendation
+
+
+@router.get("/{simulation_id}/variants/{variant_id}/image")
+def get_variant_image(
+    simulation_id: uuid.UUID,
+    variant_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> FileResponse:
+    """Serves a generated variant's image (Step 36's dashboard needs this to
+    render VariantCard). Same reasoning as products.py's image endpoint:
+    routed through ownership checks rather than a public static mount."""
+    _get_owned_simulation(db, current_user, simulation_id)
+
+    variant = db.get(ProductVariant, variant_id)
+    if variant is None or variant.simulation_id != simulation_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variant not found")
+
+    file_path = storage_service.get_path(variant.image_path)
+    if not file_path.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image file missing on disk")
+
+    return FileResponse(file_path)

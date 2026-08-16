@@ -32,3 +32,8 @@ anthropic==0.122.0
 
 # Sentiment analysis (Step 23+)
 transformers==5.15.0
+
+# Report export (Step 31+) -- pure-Python PDF generation, no external
+# binary/system dependency (rules out weasyprint's need for a system
+# Pango/Cairo install), simpler for deployment.
+reportlab==5.0.0

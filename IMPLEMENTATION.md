@@ -1549,6 +1549,12 @@ Immediately after Step 30.
 #### Objective
 Implement the explicit "Download Reports (PDF/CSV export)" use case named in Fig 6.5.
 
+**Status: ✅ Completed and fully verified (2026-08-17).** `reportlab==5.0.0` added to `requirements.txt` (per the plan's own preference over `weasyprint`, to avoid a system Pango/Cairo dependency).
+
+Reuses the same "only a completed simulation has a `Recommendation` to report on" precondition as Step 30 (`404` beforehand, same message style). CSV flattens Feedback joined against Persona name and ProductVariant metadata (one row per persona×variant, plus a final ranking section); PDF is a templated 1-2 page report (scenario summary, recommendation text, PMF ranking table, deduplicated risk flags per variant) built with `reportlab.platypus`.
+
+**Verified against the real, live API**: confirmed `404` before completion; after completion, downloaded both `?format=csv` and `?format=pdf` with correct `Content-Type`/`Content-Disposition` headers. CSV content was read directly and matched the underlying data exactly (same simulation/recommendation IDs, correct PMF ranking, correct risk flag for the triggered rule). PDF was verified structurally (valid `%PDF` header and `%%EOF` trailer, non-trivial size) — built from the same shared data-loading helper as the CSV path, so its content is generated from data already cross-checked via the CSV; no PDF viewer was available to visually confirm layout. Also verified `422` on an invalid `format` value (FastAPI's own `Literal["csv","pdf"]` validation, no extra code needed) and ownership scoping (`404` for a second real account, `401` with no auth).
+
 #### What to Develop
 Report generation service producing a PDF and a CSV export of a simulation's results.
 
@@ -1585,6 +1591,8 @@ Can begin as soon as Phase 3 (auth API) exists — does not need to wait for the
 
 #### Objective
 Give every later frontend page a working, authenticated way to call the backend.
+
+**Status: ✅ Completed (2026-08-17).** Token stored in `localStorage` under `dryrunai_token`; `apiFetch` attaches it automatically and clears it + redirects to `/login` on any `401`. `AuthContext` re-validates the stored token against `GET /auth/me` on mount (not just trusting a locally-cached user object), so a stale/invalid token is caught immediately rather than after the first failed request. `isAdmin` is derived live from `/auth/me`'s `role` field rather than decoding the JWT client-side — always reflects current DB state, avoids an extra dependency. See Step 37's note: this was verified directly (promoted a user's role mid-session, confirmed the *existing* token immediately reflected admin access with no re-login), which happens to also confirm this part of Step 32 works correctly.
 
 #### What to Develop
 - A fully wired API client (extends Step 3's stub) with JWT attachment and 401-handling.
@@ -1623,6 +1631,8 @@ Immediately after Step 32.
 #### Objective
 Replace the Step 3 placeholder routes with real registration/login forms.
 
+**Status: ✅ Completed (2026-08-17).** Matches Step 8/9's real contract exactly (register needs `org_name`, not just email/password -- confirmed against `schemas/auth.py` before writing the form, avoiding a guessed field). No auto-login after registration, per the plan's own design.
+
 #### What to Develop
 Functional `/register` and `/login` pages.
 
@@ -1659,6 +1669,12 @@ After Step 33 (needs auth) and Step 11 (needs the products API).
 #### Objective
 Implement the "Upload Product" use case (Fig 6.5).
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Real gap found while building this step, not by inspection**: there was no way to actually view an uploaded image over HTTP at all -- `original_image_path`/`preprocessed_image_path` were only ever filesystem-relative paths, and no static file mount or image-serving route existed anywhere in the backend. A blanket public `StaticFiles` mount was deliberately rejected: every other resource in this app (products, simulations, recommendations, analytics, reports) is ownership-scoped with a 404-not-403 pattern, and a public mount at a guessable path would let anyone enumerate UUIDs and view other users' photos without authentication -- a real regression from the rest of the app's security posture. Added `GET /api/v1/products/{id}/image?kind=original|preprocessed` instead, routed through the existing `get_product()` ownership check (`backend/app/api/v1/products.py`). Since a plain `<img src>` can't attach an `Authorization` header, the frontend fetches the bytes via `apiFetchBlob` and renders them through a reusable `AuthenticatedImage` component (`frontend/src/components/AuthenticatedImage.tsx`) using an object URL.
+
+**Verified against the real, live API**: uploaded a real product through the exact multipart shape the frontend sends, confirmed `GET /products` and `GET /products/{id}/image` both return correctly (200, correct `Content-Type`, and the fetched bytes decode back to a valid 512x512 JPEG via Pillow).
+
 #### What to Develop
 A form for name/description/category/branding details plus an image file input, submitting as multipart to `POST /api/v1/products`.
 
@@ -1693,6 +1709,14 @@ After Step 34 and Step 28 (needs the simulation-orchestration API).
 
 #### Objective
 Implement "Configure Scenarios" and "Run Simulation" (Fig 6.5).
+
+**Status: ✅ Completed (2026-08-17).**
+
+**Real gap found while building this step**: there was no endpoint to list a user's own past simulations -- only create-by-POST and fetch-by-known-UUID existed. Without it, a user would have no way back to a simulation's results except by keeping the URL from the moment it was created. Added `GET /api/v1/simulations` (same "list mine, or everyone's for an admin" pattern already used by `list_products`), needed by both this step's progress page and Step 36's dashboard landing view.
+
+Scenario form matches Step 27's schema field-for-field (confirmed against `schemas/simulation.py` before writing it). Progress page polls every 4s and renders each pipeline stage from `SIMULATION_STAGE_LABELS`, with a distinct terminal state for both `completed` (link to results) and `failed` (explicit error, not an infinite spinner).
+
+**Verified against the real, live API**: created a simulation through the exact JSON shape the frontend sends, confirmed the response matches the `Simulation` TypeScript interface field-for-field, and confirmed `GET /simulations` (list) returns it correctly.
 
 #### What to Develop
 A form capturing pricing tiers, target demographic, promotional messaging, and simulation options (variant count, max iterations), submitting to `POST /api/v1/simulations`, followed by a progress view polling `GET /simulations/{id}/status`.
@@ -1729,6 +1753,16 @@ After Step 35 and Step 30 (needs the analytics API).
 
 #### Objective
 Implement "View Analytics" (Fig 6.5) with the specific content PRD §25 names: sentiment charts, scenario comparisons, PMF score, launch-risk indicators, design-variant ranking.
+
+**Status: ✅ Completed (2026-08-17).**
+
+**Routing decision beyond this step's literal file list**: a dashboard inherently needs to know *which* simulation to show, but the Step 3 scaffold only ever defined a bare `/dashboard` route. Added `dashboard/:id` in `router.tsx`; `DashboardPage.tsx` (the one file the plan names) handles both cases itself via `useParams` -- no `id` renders a "your simulations" list view (using Step 35's new list endpoint), an `id` renders the full analytics view. This also gives the nav bar's "Dashboard" link somewhere sensible to go without requiring a UUID in hand.
+
+**Real gap found while building this step**: the plan's own text calls for "an expandable per-persona feedback list... so the qualitative 'why' behind the scores is visible" -- but Step 30's `/analytics` payload only ever carried aggregate sentiment counts, never individual persona reactions. Extended `VariantAnalytics` with a `feedback: PersonaFeedbackEntry[]` field (persona name, qualitative text, purchase likelihood, sentiment label) rather than adding a second endpoint and a round-trip per variant -- more consistent with Step 30's own stated goal ("one composed payload... frontend doesn't need to stitch together several endpoints"). Also added `GET /simulations/{id}/variants/{variant_id}/image` (same ownership-scoped pattern as Step 34's product image endpoint) so `VariantCard` can render each generated image.
+
+Components: `VariantCard` (image, `PMFScoreGauge`, `SentimentChart`, `RiskAlertList`, and an expandable `PersonaFeedbackList`), laid out as a comparison grid -- satisfying "scenario comparisons" the same way the plan's own Implementation Details describes it, not a separate component. The recommended variant gets a highlighted border + badge, not just top-of-list placement. `recharts@3.10.1` added to `package.json` for the pie chart (sentiment) and radial gauge (PMF score).
+
+**Verified against the real, live API, not just TypeScript types**: fetched a real `/analytics` response and confirmed every field --  including the new `feedback` array -- matches the frontend's interfaces key-for-key; fetched a real variant image through the new endpoint and confirmed it decodes to a valid image. **Honest limitation**: no browser/screenshot tool is available in this environment, so rendering itself (layout, chart appearance, whether the gauge/pie actually look right) was not visually confirmed -- only that the code compiles, builds for production cleanly, and every piece of data it depends on is real and correctly shaped. Worth an eyeball pass (`npm run dev`) before presenting.
 
 #### What to Develop
 The dashboard page rendering `GET /simulations/{id}/analytics`'s payload.
@@ -1769,6 +1803,10 @@ After Step 36 and Step 31 (report API) / Step 10 (admin dependency).
 
 #### Objective
 Implement "Download Reports" (Fig 6.5) and the Admin actor's UI (Fig 6.3: manage users, monitor simulations).
+
+**Status: ✅ Completed (2026-08-17).** Report download buttons added to `DashboardPage.tsx` (blob fetched with auth header via `apiFetchBlob`, then the standard anchor-download pattern for the actual browser save -- a plain `<a href>` can't carry the `Authorization` header the report endpoint requires). `backend/app/api/v1/admin.py` added exactly as specified: `GET /admin/users` and `GET /admin/simulations`, both behind `get_current_admin_user` (Step 10), read-only (no destructive admin action is named in the certified scope). `AdminPage.tsx` is a straightforward two-table view; `/admin` is guarded client-side by `AdminRoute`, but the real security boundary is the backend's `403`, verified independently of the frontend guard.
+
+**Verified against the real, live API**: downloaded both CSV and PDF reports through the exact endpoint/query-param shape the frontend uses (both `200`). Promoted a real test user to `admin` directly in the database, confirmed their *already-issued* token immediately gained access to both admin endpoints with no re-login required (confirms `get_current_user` re-fetches the live DB role on every request rather than trusting a stale JWT claim) and that both returned correctly-shaped data. Confirmed a second, non-admin real account gets a real `403` ("Admin privileges required") from the backend directly -- the actual access-control boundary, not just the frontend route guard.
 
 #### What to Develop
 - A download button/menu on the dashboard page for PDF/CSV export.
