@@ -484,6 +484,13 @@ All five reference tables exist with correct column sets; no FK coupling to appl
 #### When
 Immediately after Phase 2. Nothing else can be meaningfully built or tested behind auth until this exists.
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- Added `email-validator` to `requirements.txt` (not named in the plan text) — required at runtime by Pydantic's `EmailStr`, which the plan does specify using.
+- **Real bug caught by testing, not just writing the code**: `passlib==1.7.4` (unmaintained since 2020) crashes with a `ValueError: password cannot be longer than 72 bytes` during its own internal backend self-test when paired with modern `bcrypt` (resolved to `5.0.0` back in Step 2) — a known passlib/bcrypt incompatibility, not anything wrong with the request. Fixed by explicitly pinning `bcrypt==4.0.1` (the standard, documented workaround) in `requirements.txt`. Confirmed working directly (`hash_password`/`verify_password`) before re-testing the full API.
+- Verified beyond the plan's own curl example: also tested weak-password (422) and invalid-email (422) rejection, and queried the `users` table directly to confirm the stored value is a real bcrypt hash (`$2b$...`, 60 chars), never the plaintext password.
+
 #### Objective
 Let an organization register an account, satisfying FR#1's "Credentials, org details → Authentication, validation → Secure session" (PRD §9).
 

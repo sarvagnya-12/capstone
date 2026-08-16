@@ -5,7 +5,12 @@ sqlalchemy==2.0.52
 alembic==1.19.1
 psycopg[binary]==3.3.4
 passlib[bcrypt]==1.7.4
+# passlib 1.7.4 (unmaintained since 2020) is incompatible with bcrypt>=4.1's
+# stricter 72-byte validation during its own internal backend self-test; pin
+# to the last compatible bcrypt release.
+bcrypt==4.0.1
 python-jose[cryptography]==3.5.0
+email-validator==2.3.0
 python-multipart==0.0.32
 pillow==12.3.0
 pytest==9.1.1
