@@ -29,3 +29,6 @@ torch-fidelity==0.4.0
 
 # LLM persona engine (Step 20+)
 anthropic==0.122.0
+
+# Sentiment analysis (Step 23+)
+transformers==5.15.0

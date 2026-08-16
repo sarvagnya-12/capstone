@@ -1184,6 +1184,13 @@ After Step 21 (needs `Feedback.qualitative_text` to classify). Independent of Ph
 #### Objective
 Implement FR#6 (PRD §9): "Persona feedback text → NLP sentiment classification → Sentiment scores/labels (pos/neg/neutral)."
 
+**Status: ✅ Completed and fully verified (2026-08-17)** — no external API dependency, so unaffected by the Steps 20-21 API-key gap.
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- Model: `cardiffnlp/twitter-roberta-base-sentiment-latest` (RoBERTa-base, MIT-licensed) — chosen specifically because it natively outputs 3 classes (negative/neutral/positive) matching `SentimentLabel` exactly, rather than a 2-class model (e.g. SST-2 DistilBERT) that would need a threshold-based "derive neutral from confidence" workaround. Verified empirically (not assumed) that its label strings match the enum's values directly before writing the mapping.
+- `sentiment_score` is signed: `+confidence` for positive, `-confidence` for negative, `0.0` for neutral (which has no natural sign) — makes downstream aggregation (Steps 25, 30) able to average scores meaningfully rather than needing to separately track label and magnitude.
+- Verified with 4 real cases through the actual DB-backed service, not just the raw classifier: a clearly positive text (0.988 confidence, correct), a clearly negative text (-0.957, correct), a plain neutral statement ("It is a shoe.", correctly neutral), and — a case the plan didn't anticipate but is realistic given Steps 20-21's disclosed gap — the literal `[LLM_ERROR] ...` marker text, which classified as neutral without crashing, confirming the classifier handles non-natural-language input gracefully rather than only being tested on ideal inputs.
+
 #### What to Develop
 A sentiment classification wrapper and a service that applies it to `Feedback` rows.
 
