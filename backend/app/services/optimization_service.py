@@ -16,6 +16,13 @@ from sqlalchemy.orm import Session
 
 from app.models.feedback import Feedback
 from app.models.product_variant import ProductVariant
+from app.models.simulation import Simulation
+
+# Minimum score improvement between rounds to justify another iteration.
+# Below this, the loop is judged to have plateaued (Decision #8 / Open
+# Decision #6 -- no stopping rule was documented anywhere in the source
+# material; this is the concrete rule this project adopts).
+PLATEAU_THRESHOLD = 0.02
 
 # Weights are documented defaults, not tuned against any labeled outcome data
 # (none exists -- this is a simulated, not real-world-calibrated, signal).
@@ -95,3 +102,74 @@ def propose_next_attributes(db: Session, simulation_id: uuid.UUID) -> Optional[d
         "perturbation_radius": _NUDGED_PERTURBATION_RADIUS,
         "hue_shift_center_degrees": attrs.get("color_hue_shift_degrees"),
     }
+
+
+def _best_score_by_iteration(db: Session, simulation_id: uuid.UUID) -> dict[int, float]:
+    """Groups score_variants()'s per-variant scores by the iteration each
+    variant was generated in -- looked up via its Feedback rows'
+    iteration_number, which is uniform per variant since a variant is only
+    ever scored within the one round it was generated in (Step 16 creates
+    fresh ProductVariant rows every round). Returns the best score per
+    iteration seen so far."""
+    scores = score_variants(db, simulation_id)
+    if not scores:
+        return {}
+
+    variant_iteration = dict(
+        db.execute(
+            select(Feedback.variant_id, Feedback.iteration_number)
+            .where(Feedback.simulation_id == simulation_id)
+            .distinct()
+        ).all()
+    )
+
+    best_by_iteration: dict[int, float] = {}
+    for variant_id, score in scores.items():
+        iteration = variant_iteration.get(variant_id)
+        if iteration is None:
+            continue
+        best_by_iteration[iteration] = max(best_by_iteration.get(iteration, float("-inf")), score)
+
+    return best_by_iteration
+
+
+def should_continue(db: Session, simulation: Simulation) -> bool:
+    """Implements the Fig 6.4 "More Iterations?" decision (Decision #8):
+    call once after each round (labeled iteration_number = the
+    pre-call simulation.iteration_count) finishes. Returns False (stop) once
+    that many rounds have now completed >= max_iterations, OR if the best
+    score improved by less than PLATEAU_THRESHOLD versus the previous round.
+    Otherwise returns True. Always updates simulation.iteration_count to the
+    number of completed rounds before returning. Called by the orchestrator
+    (Step 28) -- pure decision logic, kept testable in isolation from the
+    orchestration plumbing around it.
+
+    Counting note: iteration_count is the number of rounds *completed so
+    far*, and rounds are labeled 0, 1, 2, ... -- so the round that just ran
+    is round `simulation.iteration_count` (pre-update), and after it,
+    completed_rounds = iteration_count + 1. Checking
+    `iteration_count >= max_iterations` *before* accounting for the round
+    that just finished is an off-by-one: it would let max_iterations=1 run a
+    second round before stopping. Comparing completed_rounds instead is what
+    makes "max_iterations=1 stops after exactly one round" (this step's own
+    required test case) actually hold.
+    """
+    current = simulation.iteration_count  # the round that just finished
+    completed_rounds = current + 1
+
+    if completed_rounds >= simulation.max_iterations:
+        simulation.iteration_count = completed_rounds
+        db.commit()
+        return False
+
+    best_by_iteration = _best_score_by_iteration(db, simulation.id)
+    if current in best_by_iteration and (current - 1) in best_by_iteration:
+        improvement = best_by_iteration[current] - best_by_iteration[current - 1]
+        if improvement < PLATEAU_THRESHOLD:
+            simulation.iteration_count = completed_rounds
+            db.commit()
+            return False
+
+    simulation.iteration_count = completed_rounds
+    db.commit()
+    return True

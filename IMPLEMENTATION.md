@@ -1315,6 +1315,15 @@ Immediately after Step 25.
 #### Objective
 Implement the Fig 6.4 "More Iterations?" loop with the concrete stopping rule from Decision #8 (Open Decision #6).
 
+**Status: ✅ Completed and fully verified (2026-08-17).**
+
+**Real off-by-one bug found and fixed before it ever ran, by tracing the plan's own required test case by hand**: a naive "check `iteration_count >= max_iterations` before incrementing" implementation, checked against the plan's own scenario 3 (`max_iterations=1` must stop after exactly one round), would have let a *second* round run first — because at the moment the check runs after round 0 finishes, `iteration_count` is still `0`, and `0 >= 1` is false. Fixed by comparing `completed_rounds = iteration_count + 1` against `max_iterations` instead, and updating `iteration_count` to that completed count in every return path (not just the "continue" path) — documented at length in the function's own docstring since this exact class of bug is easy to reintroduce.
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- `PLATEAU_THRESHOLD = 0.02` — a documented constant, not tuned against any labeled data (none exists).
+- Per-iteration scoring reuses Step 25's `score_variants()` rather than duplicating the scoring formula — variants are grouped by iteration via their `Feedback` rows' `iteration_number` (uniform per variant, since a variant only ever gets feedback from the one round it was generated in).
+- **Verified all 3 scenarios the plan explicitly requires, against real DB state, not simulated in memory**: (1) steadily improving scores with `max_iterations=3` → `[True, True, False]`, running exactly 3 rounds; (2) a clear plateau at round 2 with `max_iterations=5` (deliberately set higher than the plateau point, so the *plateau* — not the max — is what's being tested) → `[True, True, False]`, stopping 2 rounds earlier than the max would have allowed; (3) `max_iterations=1` with a strongly improving trend → stops after exactly one round regardless — this is the exact case that caught the off-by-one bug above.
+
 #### What to Develop
 Loop-control logic that decides, after each round, whether to generate another round of variants or stop and move to final recommendation.
 
