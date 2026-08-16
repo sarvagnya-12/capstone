@@ -22,6 +22,7 @@ dist/
 *.pt
 *.pth
 *.onnx
+*.pkl
 
 # --- Local application storage (uploaded/generated images) ---
 backend/storage/

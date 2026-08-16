@@ -15,3 +15,13 @@ python-multipart==0.0.32
 pillow==12.3.0
 pytest==9.1.1
 httpx==0.28.1
+
+# GAN engine (Step 15+). CUDA build -- install with:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+# A plain `pip install -r requirements.txt` will NOT find these +cu126 builds
+# on PyPI; run the command above first (or once more after this file), then
+# `pip install -r requirements.txt` again to pick up everything else.
+torch==2.13.0+cu126
+torchvision==0.28.0+cu126
+torchmetrics==1.9.0
+requests==2.34.2

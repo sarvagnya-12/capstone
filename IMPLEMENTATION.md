@@ -830,6 +830,18 @@ After Phase 4 (needs preprocessed product images) and independent of Phase 5. Ca
 #### Objective
 Load a pretrained StyleGAN2 checkpoint and confirm inference runs end-to-end, before building the controllable-variation logic on top of it — satisfies the "Planned" GAN component from PRD §14 becoming real.
 
+**Status: ✅ Completed (2026-08-17).**
+
+**This was the highest-risk step in the whole plan, and it required real judgment calls — documented in full:**
+
+1. **Environment check before writing any code**: this machine has an NVIDIA GPU (RTX 4050, 6GB VRAM, driver supports CUDA 13.1) but **no CUDA toolkit (`nvcc`) or MSVC compiler**. Genuine StyleGAN2 implementations rely on compiling custom CUDA kernels for their fastest path. I flagged this to the user with three options (pure-PyTorch alternative architecture / attempt real StyleGAN2 anyway / install a full compiler toolchain first) rather than silently picking one, since it directly affects Decision #5 (the plan's own resolved "StyleGAN2" choice) and carried real risk of losing hours to environment issues.
+2. **User chose to attempt real StyleGAN2 anyway.** Before writing code, verified via the actual NVIDIA source (`torch_utils/ops/bias_act.py`, `upfirdn2d.py`) that both custom ops have genuine, automatic pure-PyTorch fallbacks when compilation fails (a warning, not a crash) — this de-risked the attempt substantially and justified proceeding.
+3. **"Pip-installable" (as the plan's Implementation Details literally says) turned out not to be accurate for any real StyleGAN2 implementation** — NVIDIA's official `stylegan2-ada-pytorch` is a research repo (clone-and-run), not a PyPI package. Resolved by vendoring only the minimal inference-required subset (`dnnlib/`, `torch_utils/`, `legacy.py` — 390KB, no training/loss/augmentation code) into `backend/app/ml/gan/vendor/stylegan2_ada/`, rather than pip-installing a lower-quality alternative just to satisfy the letter of "pip install."
+4. **Checkpoint domain**: used NVIDIA's official **AFHQ-cat** pretrained checkpoint (512×512), not a footwear/product checkpoint — none exists publicly. Chosen over FFHQ (faces, 1024×1024) for the smaller VRAM footprint and being marginally closer to "object/creature" than human faces. Domain mismatch is expected and explicitly deferred to Step 17's fine-tuning (per the user's own "training can be done later" instruction) — this step's actual job (checkpoint loads, forward pass produces a valid image) is fully satisfied regardless of domain.
+5. **License**: NVIDIA Source Code License — **non-commercial research/evaluation use only**. Fine for this academic capstone; flagging clearly since it would need revisiting before any commercial productization (relevant given PRD §36's SaaS future-scope mention).
+6. **Found and fixed real noise, not just correctness, issues**: NVIDIA's fallback path prints/warns on every single forward pass (not just once), which would spam server logs heavily once Step 16 generates multiple variants per simulation. Added a targeted `warnings.filterwarnings` for the expected warning plus a narrow `contextlib.redirect_stdout` wrapper around the generation call (not a blanket suppression) so genuine errors still surface normally.
+7. **Native resolution (512×512) resized down to Step 12's fixed 256×256`TARGET_SIZE`** via `F.interpolate` as the final step of `generate_image()`, imported directly from `image_preprocessing.py` so the two constants can never drift apart.
+
 #### What to Develop
 A thin model-loading wrapper around a pretrained StyleGAN2 implementation.
 
