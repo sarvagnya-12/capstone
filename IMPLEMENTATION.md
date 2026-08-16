@@ -1229,6 +1229,14 @@ After Step 23 (needs sentiment scores as an input signal). Independent of Phase 
 #### Objective
 Implement FR#7 (PRD §9): "Sentiment + simulation results → Pattern/anomaly detection, rule-based + AI → Risk alerts/insights."
 
+**Status: ✅ Completed and fully verified (2026-08-17)** — pure rule-based logic over existing DB data, no external dependency.
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- **Corrected a real error in this step's own plan text**: it describes flagging "an unusually LOW fid_score" as indicating an unrealistic variant — backwards from how FID works, and directly contradicted by what Step 18 itself verified (a degraded/less-realistic batch scored HIGHER: 409 vs. 131 for normal). Implemented the correct direction (flag unusually *high* FID) and documented the correction prominently in the module docstring rather than silently fixing it.
+- **`risk_flags` denormalized across every `Feedback` row for a variant**, not stored on a dedicated variant-level field — `ProductVariant` has no `risk_flags` column in the current schema, and adding one is outside this step's own file list (`services/risk_service.py` only, no migration). A disclosed, schema-driven choice.
+- Four rules implemented exactly as specified: negative-sentiment ratio, average purchase-likelihood, average consistency-variance (Step 22), and FID (Step 18, direction corrected) — each threshold a named constant with a comment, not a magic number.
+- **Verified exactly per the plan's own instructions, in one simulation with two variants**: a deliberately "risky" variant (75% negative sentiment, 0.10 avg purchase likelihood, 0.70 avg consistency variance, FID 450) triggered **all four rules** with clear, specific explanations; a deliberately "healthy" variant (100% positive, 0.85 avg likelihood, 0.05 variance, FID 95) triggered **zero** false-positive flags in the same run. Confirmed both the returned summary and the persisted `Feedback.risk_flags` in the database agree.
+
 #### What to Develop
 A rule-based risk scorer that flags simulations/variants with concerning patterns.
 
