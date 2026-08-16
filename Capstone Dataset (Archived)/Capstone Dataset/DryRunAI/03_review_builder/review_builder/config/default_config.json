@@ -1,0 +1,16 @@
+{
+  "service_name": "review_builder",
+  "supported_sources": ["amazon", "zappos"],
+  "supported_languages": ["en"],
+  "default_language": "en",
+  "rating": {
+    "min": 1.0,
+    "max": 5.0
+  },
+  "logging": {
+    "max_bytes": 1048576,
+    "backup_count": 5,
+    "console": true
+  }
+}
+

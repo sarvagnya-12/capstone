@@ -1,0 +1,14 @@
+{
+  "service_name": "knowledge_integration_service",
+  "exports": {
+    "csv": true,
+    "parquet": true,
+    "jsonl": true
+  },
+  "logging": {
+    "max_bytes": 1048576,
+    "backup_count": 5,
+    "console": true
+  }
+}
+

@@ -1,0 +1,32 @@
+{
+  "service_name": "market_service",
+  "collector_plugins": [
+    "market_service.collectors.official",
+    "market_service.collectors.retail",
+    "market_service.collectors.marketplace"
+  ],
+  "supported_collectors": [
+    "nike",
+    "adidas",
+    "puma",
+    "new_balance",
+    "asics",
+    "zappos",
+    "foot_locker",
+    "jd_sports",
+    "stockx",
+    "goat"
+  ],
+  "supported_currencies": ["USD", "EUR", "GBP", "INR", "JPY", "CAD", "AUD"],
+  "supported_regions": ["US", "EU", "UK", "IN", "JP", "CA", "AU", "Global"],
+  "default_region": "Global",
+  "default_availability": "Unknown",
+  "default_market_type": "Retail",
+  "default_price_type": "Retail",
+  "logging": {
+    "max_bytes": 1048576,
+    "backup_count": 5,
+    "console": true
+  }
+}
+

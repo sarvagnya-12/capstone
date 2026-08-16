@@ -1,0 +1,18 @@
+{
+  "canonical": {
+    "Black": ["black", "blk", "jet black"],
+    "White": ["white", "wht", "off white", "cream"],
+    "Red": ["red", "crimson", "scarlet", "burgundy"],
+    "Blue": ["blue", "navy", "royal", "aqua"],
+    "Green": ["green", "olive", "mint"],
+    "Yellow": ["yellow", "gold"],
+    "Orange": ["orange"],
+    "Purple": ["purple", "violet"],
+    "Pink": ["pink", "rose"],
+    "Grey": ["grey", "gray", "charcoal", "silver"],
+    "Brown": ["brown", "tan", "khaki"],
+    "Beige": ["beige", "sand", "natural"],
+    "Multi": ["multi", "multicolor", "multi-color", "assorted"]
+  }
+}
+

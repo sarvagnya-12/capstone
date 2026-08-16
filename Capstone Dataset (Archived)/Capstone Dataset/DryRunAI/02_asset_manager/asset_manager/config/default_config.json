@@ -1,0 +1,23 @@
+{
+  "service_name": "asset_manager",
+  "asset_type": "images",
+  "image_url_columns": ["image_url", "original_image_url", "primary_image_url", "asset_url"],
+  "image_type_columns": ["image_type", "asset_type", "view"],
+  "default_image_type": "Unknown",
+  "supported_image_formats": ["JPEG", "PNG", "WEBP"],
+  "image_format_extensions": {
+    "JPEG": ".jpg",
+    "PNG": ".png",
+    "WEBP": ".webp"
+  },
+  "download": {
+    "timeout_seconds": 30,
+    "retries": 2,
+    "user_agent": "DryRunAI-AssetManager/1.0"
+  },
+  "logging": {
+    "max_bytes": 1048576,
+    "backup_count": 5,
+    "console": true
+  }
+}

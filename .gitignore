@@ -1,0 +1,55 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# --- Node / frontend ---
+node_modules/
+dist/
+.vite/
+
+# --- Environment / secrets ---
+.env
+!.env.example
+
+# --- ML model checkpoints (large binaries, not source) ---
+*.pt
+*.pth
+*.onnx
+
+# --- Local application storage (uploaded/generated images) ---
+backend/storage/
+
+# --- Local Claude Code tooling config (machine-specific) ---
+.claude/settings.local.json
+
+# --- Dataset-extraction pipeline generated output ---
+# The pipeline's source code and its small checked-in datasets/**/raw/ sample
+# fixtures stay tracked. Everything below is where it writes generated data
+# once actually run (currently empty per project_manifest.json) and must not
+# be committed once it is.
+**/logs/
+**/output/
+**/datasets/merged/
+**/datasets/normalized/
+**/datasets/versions/
+**/datasets/assets/
+**/datasets/quarantine/
+**/datasets/master/
+**/datasets/processed/
+**/datasets/*/processed/
+**/datasets/*/quarantine/
+**/datasets/*/versions/
+**/datasets/*/reports/
+**/datasets/*/metadata/
+
+# --- OS cruft ---
+.DS_Store
+Thumbs.db
+desktop.ini

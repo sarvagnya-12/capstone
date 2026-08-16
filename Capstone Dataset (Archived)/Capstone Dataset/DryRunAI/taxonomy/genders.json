@@ -1,0 +1,8 @@
+{
+  "canonical": {
+    "Men": ["men", "mens", "male", "m"],
+    "Women": ["women", "womens", "female", "w"],
+    "Unisex": ["unisex", "all gender", "all genders"],
+    "Kids": ["kids", "kid", "boys", "girls", "youth", "children"]
+  }
+}

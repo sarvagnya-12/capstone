@@ -1,0 +1,23 @@
+{
+  "schema_name": "dryrunai_master_product_schema",
+  "schema_version": 1,
+  "description": "Frozen canonical schema for DryRunAI products.csv. Future scripts must read this file and must not modify products.csv columns.",
+  "columns": [
+    {"name": "product_id", "type": "string", "required": true},
+    {"name": "brand", "type": "string", "required": true},
+    {"name": "model", "type": "string", "required": true},
+    {"name": "category", "type": "string", "required": true},
+    {"name": "subcategory", "type": "string", "required": false},
+    {"name": "gender", "type": "string", "required": false},
+    {"name": "retail_price", "type": "number", "required": false},
+    {"name": "release_year", "type": "integer", "required": false},
+    {"name": "primary_color", "type": "string", "required": false},
+    {"name": "secondary_color", "type": "string", "required": false},
+    {"name": "material", "type": "string", "required": false},
+    {"name": "source_url", "type": "url", "required": true, "nullable": true},
+    {"name": "source", "type": "string", "required": true},
+    {"name": "source_product_id", "type": "string", "required": true},
+    {"name": "confidence", "type": "number", "required": true},
+    {"name": "status", "type": "string", "required": true}
+  ]
+}

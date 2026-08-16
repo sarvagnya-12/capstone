@@ -1,0 +1,6 @@
+source,dryrun_product_id,source_url,market_type,price_type,currency,price,availability,stock_status,release_date,region,last_updated
+nike,DRY-SNK-000001,https://example.com/nike/z1,Official,MSRP,USD,120,Available,InStock,2026-01-01,US,2026-07-01T10:00:00+00:00
+zappos,DRY-SNK-000001,https://example.com/zappos/z1,Retail,Retail,USD,119.99,Available,InStock,2026-01-01,US,2026-07-01T10:00:00+00:00
+stockx,DRY-SNK-000001,https://example.com/stockx/z1,Marketplace,Resale,USD,150,Limited,Limited,2026-01-01,US,2026-07-01T10:00:00+00:00
+stockx,DRY-SNK-000001,https://example.com/stockx/z1,Marketplace,Resale,USD,150,Limited,Limited,2026-01-01,US,2026-07-01T10:00:00+00:00
+goat,DRY-SNK-000001,https://example.com/goat/z1,Marketplace,Resale,USD,-1,Available,InStock,2026-01-01,US,2026-07-01T10:00:00+00:00

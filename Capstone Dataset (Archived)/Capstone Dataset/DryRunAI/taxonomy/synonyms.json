@@ -1,0 +1,16 @@
+{
+  "gender": {
+    "Men": ["men", "mens", "male", "m"],
+    "Women": ["women", "womens", "female", "w"],
+    "Unisex": ["unisex", "all gender", "all genders"],
+    "Kids": ["kids", "kid", "boys", "girls", "youth", "children"]
+  },
+  "model_terms": {
+    "Air Max": ["airmax", "air-max"],
+    "Air Force": ["airforce", "air-force"],
+    "Ultraboost": ["ultra boost", "ultra-boost"],
+    "Gel Lyte": ["gel-lyte", "gel lyte"],
+    "Chuck Taylor": ["chuck taylor", "ctas"]
+  }
+}
+

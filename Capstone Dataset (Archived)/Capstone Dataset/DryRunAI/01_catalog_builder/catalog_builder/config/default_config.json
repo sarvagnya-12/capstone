@@ -1,0 +1,8 @@
+{
+  "category_code": "SNK",
+  "matching": {
+    "high_confidence_threshold": 0.92,
+    "medium_confidence_threshold": 0.78
+  }
+}
+

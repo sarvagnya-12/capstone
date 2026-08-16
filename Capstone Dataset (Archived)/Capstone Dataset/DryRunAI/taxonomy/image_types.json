@@ -1,0 +1,15 @@
+{
+  "canonical": {
+    "Front": ["front"],
+    "Back": ["back", "rear"],
+    "Left": ["left", "left side"],
+    "Right": ["right", "right side"],
+    "Top": ["top"],
+    "Bottom": ["bottom", "sole", "outsole"],
+    "45Degree": ["45degree", "45 degree", "45-degree", "angle", "angled"],
+    "Lifestyle": ["lifestyle", "editorial"],
+    "OnFoot": ["onfoot", "on foot", "on-foot"],
+    "Packaging": ["packaging", "box"],
+    "Unknown": ["unknown"]
+  }
+}

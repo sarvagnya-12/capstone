@@ -1,0 +1,18 @@
+{
+  "service_name": "dataset_quality_service",
+  "quality_rules": {
+    "missing_required_penalty": 3,
+    "duplicate_penalty": 5,
+    "broken_reference_penalty": 7,
+    "missing_dataset_penalty": 15,
+    "missing_relationship_penalty": 2,
+    "minimum_score": 0,
+    "maximum_score": 100
+  },
+  "logging": {
+    "max_bytes": 1048576,
+    "backup_count": 5,
+    "console": true
+  }
+}
+

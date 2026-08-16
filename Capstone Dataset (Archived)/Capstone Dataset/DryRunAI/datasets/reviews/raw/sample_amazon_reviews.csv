@@ -1,0 +1,5 @@
+asin,dryrun_product_id,review_id,summary,reviewText,overall,reviewTime,reviewerName,verified,helpful_votes,language
+Z1,DRY-SNK-000001,A1,Great shoe,Comfortable and clean look.,5,2026-01-02,Alex,true,3,en
+Z1,DRY-SNK-000001,A2,Okay fit,The fit was narrow but the material felt good.,4,01/03/2026,Sam,false,1,en
+Z1,DRY-SNK-000001,A2,Okay fit,The fit was narrow but the material felt good.,4,01/03/2026,Sam,false,1,en
+Z1,DRY-SNK-000001,A3,Bad row,,6,2026-01-04,Casey,true,0,en

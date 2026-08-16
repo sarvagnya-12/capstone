@@ -1,0 +1,15 @@
+{
+  "canonical": {
+    "Nike": ["nike", "nike sportswear"],
+    "Adidas": ["adidas", "adidas originals"],
+    "Puma": ["puma"],
+    "New Balance": ["new balance", "nb"],
+    "ASICS": ["asics", "asics tiger"],
+    "Converse": ["converse"],
+    "Vans": ["vans"],
+    "Reebok": ["reebok"],
+    "Saucony": ["saucony"],
+    "Brooks": ["brooks"]
+  }
+}
+

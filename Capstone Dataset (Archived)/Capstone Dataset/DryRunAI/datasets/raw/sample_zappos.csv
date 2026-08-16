@@ -1,0 +1,5 @@
+id,name,brand,category,department,color,price,material,description,source_url
+Z1,Nike Air Max Limited Edition Men's Running Shoes,Nike,Running Shoes,Men,Black/White,$120,Mesh,Air Max running sneaker,https://example.com/zappos/z1
+Z2,Nike Air-Max Mens Running Shoe,Nike,Running,Men,Black,$119.99,Mesh,Duplicate Air Max row,https://example.com/zappos/z2
+Z3,Adidas Ultraboost Women's Sneakers,adidas,Sneakers,Women,Blue,$180,Primeknit,,https://example.com/zappos/z3
+Z4,Unknown Product,,Sneakers,Men,Red,$50,Canvas,Missing brand sample,https://example.com/zappos/z4

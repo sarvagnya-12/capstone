@@ -1,0 +1,25 @@
+{
+  "service_name": "product_intelligence_service",
+  "collector_plugins": [
+    "product_intelligence_service.collectors.official_brand",
+    "product_intelligence_service.collectors.public_sources"
+  ],
+  "supported_collectors": [
+    "nike",
+    "adidas",
+    "puma",
+    "new_balance",
+    "asics",
+    "wikipedia",
+    "wikidata",
+    "trusted_public_brand_resources"
+  ],
+  "supported_regions": ["US", "EU", "UK", "IN", "JP", "CA", "AU", "Global"],
+  "supported_countries": ["United States", "Germany", "Japan", "India", "United Kingdom", "Canada", "Australia"],
+  "logging": {
+    "max_bytes": 1048576,
+    "backup_count": 5,
+    "console": true
+  }
+}
+

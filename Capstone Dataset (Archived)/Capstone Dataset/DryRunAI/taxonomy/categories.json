@@ -1,0 +1,11 @@
+{
+  "canonical": {
+    "Sneakers": ["sneakers", "shoes", "shoe", "athletic shoes", "casual shoes", "footwear"],
+    "Running Shoes": ["running", "running shoes", "runner"],
+    "Basketball Shoes": ["basketball", "basketball shoes", "hoops"],
+    "Training Shoes": ["training", "trainers", "cross training"],
+    "Skate Shoes": ["skate", "skate shoes"]
+  },
+  "default_category": "Sneakers"
+}
+

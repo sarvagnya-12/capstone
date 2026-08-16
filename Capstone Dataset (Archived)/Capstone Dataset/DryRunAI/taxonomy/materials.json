@@ -1,0 +1,11 @@
+{
+  "canonical": {
+    "Leather": ["leather", "suede", "nubuck"],
+    "Mesh": ["mesh", "knit", "flyknit", "primeknit"],
+    "Canvas": ["canvas", "textile"],
+    "Synthetic": ["synthetic", "manmade", "faux leather"],
+    "Rubber": ["rubber"],
+    "Foam": ["foam", "eva"]
+  }
+}
+
