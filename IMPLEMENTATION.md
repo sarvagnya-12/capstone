@@ -923,6 +923,14 @@ After Step 16, and functionally blocked on real ingested image data (Step 13) fo
 #### Objective
 Improve output realism/domain-relevance beyond the generic pretrained checkpoint by fine-tuning on real product images, resolving Decision #6 (transfer learning, cloud GPU).
 
+**Status: ✅ Completed (2026-08-17) — as a smoke test only, exactly as this step's own text scopes it.** Per the user's explicit instruction that training/output quality is deferred, this step wrote the real fine-tuning script but did not attempt any meaningful training run.
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- **Simplified training loop, not NVIDIA's full recipe** — documented prominently in the module docstring: standard non-saturating GAN loss (G/D alternating Adam updates), no R1 gradient penalty, no path-length regularization, no ADA augmentation pipeline. Reproducing those would require vendoring substantially more of NVIDIA's training infrastructure than Step 15's inference-only subset — out of scope for what this step actually needs to prove. EMA sync is a direct weight copy, not NVIDIA's running-average schedule, for the same reason.
+- **Same fixture problem as Step 13, hit again**: the pipeline's raw fixtures contain no actual image files (only metadata CSV rows), so there was nothing real to smoke-test against. Used 6 small synthetic placeholder images (solid colors) instead, clearly not claiming they're real product data.
+- **Verified for real, not just written**: ran 5 actual G/D training steps (batch size 2) against the synthetic images on the local GPU — completed without error, with sane loss values printed per step. Confirmed the output `.pkl` has a different SHA-256 hash than the input (the plan's literal completion criteria), and — beyond what the plan asked for — confirmed the fine-tuned checkpoint still loads correctly through Step 15's existing `model.py` and produces valid output, proving the re-saved pickle format wasn't broken.
+- Local hardware (RTX 4050, no compiler) handled 5 steps at 512×512/batch=2 without OOM, but slowly (pure-Python op fallback, same as Steps 15–16) — consistent with, not contradicting, this step's own instruction to use a cloud GPU for any real fine-tuning run.
+
 #### What to Develop
 A standalone fine-tuning script (not part of the request/response path — this runs offline, ahead of time).
 
