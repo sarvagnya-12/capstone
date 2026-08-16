@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.models.product import Product
 from app.models.user import User, UserRole
-from app.services import storage_service
+from app.services import image_preprocessing, storage_service
 
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png"}
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
@@ -68,6 +68,14 @@ def create_product(
     db.add(product)
     db.commit()
     db.refresh(product)
+
+    preprocessed_relative_path = image_preprocessing.preprocess_image(
+        relative_path, output_subfolder=f"products/{product_id}"
+    )
+    product.preprocessed_image_path = preprocessed_relative_path
+    db.commit()
+    db.refresh(product)
+
     return product
 
 

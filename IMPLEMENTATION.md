@@ -698,6 +698,13 @@ Image preprocessing function: resize to the model's expected resolution, center-
 #### Implementation Details
 Use `Pillow` for resize/crop (no need for a heavier image library at this stage). Fixed target size chosen to match the pretrained StyleGAN2 checkpoint's expected input (documented precisely in Step 15 once the checkpoint is selected — this step defines the function signature and pipeline slot; the exact resolution constant is set together with Step 15 so the two don't drift). Preprocessing runs synchronously at upload time (images are small; no need for a background job here).
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- Resolution constant set to **256×256 RGB**, defined once in `image_preprocessing.py` (`TARGET_SIZE`) and referenced from there when Step 15 loads the checkpoint, so the two stay in sync by construction rather than by convention.
+- `ImageOps.fit()` (Pillow) does the resize + center-crop-to-target-aspect-ratio in one call; added `ImageOps.exif_transpose()` first to respect phone/camera orientation metadata (a real correctness issue `ImageOps.fit` alone wouldn't catch) — small, well-justified addition beyond the literal plan text.
+- Verified with exactly the case the plan calls for (a non-square, oversized 1800×900 image) plus an additional RGBA-with-transparency PNG upload, to confirm the `.convert("RGB")` normalization actually handles a real alpha-channel image, not just same-mode inputs.
+
 #### Dependencies
 Step 11.
 
