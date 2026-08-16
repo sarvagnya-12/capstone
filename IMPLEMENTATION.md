@@ -801,6 +801,14 @@ Query `ref_product_intelligence` for distinct, non-null `target_age_min/max`, `t
 #### Dependencies
 Step 13.
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- `MIN_REAL_SEGMENTS = 15` threshold (below Step 19's ~20-template target, so a near-complete real dataset doesn't get needlessly discarded in favor of the baseline).
+- `BASELINE_SEGMENTS` is a hand-authored list of exactly 20 structured `(age range, income segment, lifestyle, region)` combinations, covering every named example from the source diagrams (price-sensitive student, urban professional, trend-driven buyer, budget shopper, premium user) plus systematic expansion — not an arbitrary/random list.
+- No formal pytest file added yet — verified with an ad-hoc script directly against real Postgres, consistent with every step so far; the formal automated suite is Step 38's job. Test data truncated afterward.
+- Verified all three cases: empty table (today's real state) → baseline; the plan's own exact scenario (a 4-row fixture) → still baseline; 20 distinct real segments → switches to real data, confirming the threshold logic in both directions, not just the empty-table case.
+
 #### Expected Result
 A callable function/module that returns a list of segment dicts, sourced from real data when available and from a documented fallback baseline otherwise.
 
