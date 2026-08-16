@@ -11,6 +11,7 @@ import logging
 import random
 import re
 import uuid
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -51,16 +52,62 @@ def _crude_sentiment_proxy(text: str) -> float:
     return 0.0 if total == 0 else (positive - negative) / total
 
 
+DEFAULT_REPRESENTATIVE_PERSONA_COUNT = 5
+
+
 class SimulationNotFoundError(Exception):
     pass
 
 
-def simulate_persona_reactions(db: Session, simulation_id: uuid.UUID, iteration_number: int = 0) -> list[Feedback]:
+def select_representative_personas(db: Session, count: int = DEFAULT_REPRESENTATIVE_PERSONA_COUNT) -> list[Persona]:
+    """Used by Step 28's simulation-creation endpoint when the caller doesn't
+    specify persona_ids explicitly. Picks up to `count` personas spread
+    across distinct lifestyle categories for diversity, not matched against
+    the scenario's target_demographic -- demographic-aware selection is a
+    reasonable future enhancement, not required by the plan text ("a
+    representative sample from the library")."""
+    all_personas = db.query(Persona).order_by(Persona.lifestyle, Persona.name).all()
+
+    selected: list[Persona] = []
+    seen_lifestyles: set = set()
+    for persona in all_personas:
+        if persona.lifestyle not in seen_lifestyles:
+            selected.append(persona)
+            seen_lifestyles.add(persona.lifestyle)
+        if len(selected) >= count:
+            break
+
+    if len(selected) < count:
+        remaining = [p for p in all_personas if p not in selected]
+        selected.extend(remaining[: count - len(selected)])
+
+    return selected
+
+
+def simulate_persona_reactions(
+    db: Session,
+    simulation_id: uuid.UUID,
+    iteration_number: int = 0,
+    variant_ids: Optional[list[uuid.UUID]] = None,
+) -> list[Feedback]:
+    """variant_ids (added Step 28): scopes simulation to a specific set of
+    variants -- critical for a multi-iteration simulation, where
+    ProductVariant has no iteration column of its own and simply querying
+    "all variants for this simulation" would re-simulate every earlier
+    round's variants again on each subsequent round (a real bug caught by
+    Step 28's own end-to-end test: round 2 produced 6 variants x 5 personas
+    instead of the expected 3 x 5, because it silently included round 1's
+    variants too). Omitted (None), preserves Step 21's original tested
+    behavior of processing every variant in the simulation -- correct for a
+    single-iteration call, not for the orchestrator's loop."""
     simulation = db.get(Simulation, simulation_id)
     if simulation is None:
         raise SimulationNotFoundError(simulation_id)
 
-    variants = db.query(ProductVariant).filter(ProductVariant.simulation_id == simulation.id).all()
+    variant_query = db.query(ProductVariant).filter(ProductVariant.simulation_id == simulation.id)
+    if variant_ids is not None:
+        variant_query = variant_query.filter(ProductVariant.id.in_(variant_ids))
+    variants = variant_query.all()
     personas = simulation.personas
 
     try:

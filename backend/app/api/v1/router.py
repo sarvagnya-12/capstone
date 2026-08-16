@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 
-from app.api.v1 import auth, products
+from app.api.v1 import auth, products, simulations
 
 router = APIRouter()
 router.include_router(auth.router)
 router.include_router(products.router)
+router.include_router(simulations.router)

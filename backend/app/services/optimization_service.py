@@ -48,12 +48,24 @@ def _engagement_proxy(text: str) -> float:
     return min(len(text) / _ENGAGEMENT_LENGTH_CAP, 1.0)
 
 
-def score_variants(db: Session, simulation_id: uuid.UUID) -> dict[uuid.UUID, float]:
+def score_variants(
+    db: Session, simulation_id: uuid.UUID, iteration_number: Optional[int] = None
+) -> dict[uuid.UUID, float]:
     """Weighted sum of mean sentiment_score, mean purchase_likelihood, and
     mean engagement proxy, minus a flat penalty per distinct risk rule
     triggered (Step 24). Deterministic and fully explainable from its
-    inputs -- no randomness, no opaque model."""
-    feedback_rows = list(db.execute(select(Feedback).where(Feedback.simulation_id == simulation_id)).scalars().all())
+    inputs -- no randomness, no opaque model.
+
+    iteration_number (added Step 28): scopes scoring to a single round when
+    given (e.g. Step 29's build_recommendation() only wants the *final*
+    round's variants ranked, not every historical round mixed together);
+    omitted (None), scores every variant across all rounds, which is what
+    Step 26's should_continue()/_best_score_by_iteration() need to compare
+    across rounds."""
+    stmt = select(Feedback).where(Feedback.simulation_id == simulation_id)
+    if iteration_number is not None:
+        stmt = stmt.where(Feedback.iteration_number == iteration_number)
+    feedback_rows = list(db.execute(stmt).scalars().all())
 
     by_variant: dict[uuid.UUID, list[Feedback]] = defaultdict(list)
     for feedback in feedback_rows:
