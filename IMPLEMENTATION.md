@@ -629,6 +629,14 @@ Role check works correctly in both directions; no public API path exists to self
 #### When
 Immediately after Phase 3. This is FR#2 (PRD §9) and the first endpoint real frontend work (Phase 14) will call.
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- No separate "create" Pydantic schema for the request — `POST /products` is `multipart/form-data` (file + fields), which FastAPI handles via individual `Form(...)`/`File(...)` parameters directly on the route, not a bound Pydantic model. Only `ProductResponse` was added to `schemas/product.py`.
+- Product UUID generated up front (`uuid.uuid4()` in `product_service.create_product`) so the storage path `STORAGE_ROOT/products/{product_id}/` is known before the DB insert, matching the path convention the plan specifies.
+- Non-owner requests to `GET /products/{id}` return 404 ("Product not found"), not 403 — deliberately avoids leaking existence of another user's resources; same pattern the recommendation/simulation endpoints should follow later.
+- Verified beyond the plan's own curl example: also tested wrong extension (422), wrong `Content-Type` header (422), an oversized 11MB file (422, exact byte counts in the error), missing auth (401), and confirmed no orphaned files/directories are written to disk for any rejected upload (validation runs before any storage write).
+
 #### Objective
 Let an authenticated organization user upload a product concept (images, description, branding) for later simulation.
 
