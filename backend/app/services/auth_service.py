@@ -33,3 +33,17 @@ def authenticate_user(db: Session, email: str, password: str) -> User | None:
     if not verify_password(password, user.hashed_password):
         return None
     return user
+
+
+def promote_to_admin(db: Session, email: str) -> User:
+    """Operational-only helper (DB update / one-off script) -- intentionally not
+    exposed via any API route. Self-service admin promotion is a security risk
+    not required by any functional requirement.
+    """
+    user = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
+    if user is None:
+        raise ValueError(f"No user with email {email!r}")
+    user.role = UserRole.ADMIN
+    db.commit()
+    db.refresh(user)
+    return user

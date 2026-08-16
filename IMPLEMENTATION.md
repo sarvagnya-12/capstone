@@ -584,6 +584,14 @@ Login issues a valid JWT; `get_current_user` correctly accepts valid tokens and 
 #### When
 Immediately after Step 9.
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- `get_current_admin_user` implemented here (deferred from Step 9, see that step's notes).
+- **Verification used an ad-hoc, in-process-only test route** (registered on the app only inside a throwaway verification script via `TestClient`, never written to any file) rather than inventing a real admin API endpoint prematurely — a real admin-only endpoint is Phase 13's job, once there's actual admin data to protect. This exercises the real FastAPI dependency-injection chain (`get_current_admin_user` → `get_current_user` → JWT decode → DB lookup) without adding fake permanent surface area to the API.
+
+#### Objective
+
 #### Objective
 Give admin-only endpoints (Phase 13's admin views) a reusable guard, satisfying the Admin actor's responsibilities in Fig 6.3 ("manages users, monitors simulations").
 
