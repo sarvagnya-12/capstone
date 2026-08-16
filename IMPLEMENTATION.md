@@ -318,6 +318,15 @@ Postgres reachable locally via Docker Compose; `README.md` documents the full lo
 
 ### Step 5 — Core Domain Models (SQLAlchemy)
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, >95% confidence, per user's fast-track instruction):**
+- SQLAlchemy 2.0 typed-declarative style (`Mapped`/`mapped_column`) throughout; `Uuid` PKs with `uuid.uuid4` defaults; `JSONB` (not generic `JSON`) for all JSON columns, since the stack is Postgres-committed and JSONB is strictly better there.
+- `models/__init__.py` proactively imports and re-exports every model (beyond Step 5's own verification command) so `import app.models` alone registers the full schema on `Base.metadata` — this directly sets up what Step 6's Alembic `env.py` needs.
+- `ondelete` FK behavior set now, on the models, rather than deferred to hand-editing the Step 6 migration (Alembic reads `ondelete` from the model's `ForeignKey`, so this is the natural place for it): `CASCADE` for Product→{Simulation,ProductVariant}, Simulation→{ProductVariant,Feedback,Recommendation}; `RESTRICT` for User→{Product,Simulation} and Feedback/SimulationPersona→Persona (personas are shared reference data, not simulation-owned) and Recommendation→ProductVariant. Step 6's plan text explicitly named a subset of these (Product→ProductVariant CASCADE, Simulation→Feedback/Recommendation CASCADE, User→Product RESTRICT); the rest follow the same stated logic applied consistently to structurally identical relationships.
+- `feedback.sentiment_label/sentiment_score/engagement_score/risk_flags` are nullable — populated in stages by later steps (21 → 23 → 24), not all at once.
+- Verification went beyond the step's own import check: forced `configure_mappers()` (catches relationship/FK errors the plain import wouldn't), and ran a real `create_all()`/`drop_all()` against actual Postgres to confirm DDL (enums, JSONB, FK `ondelete`) is valid before Step 6 builds the migration on top of it.
+
 #### When
 Immediately after Phase 1. Every feature from here on persists data, so the schema must exist first.
 
