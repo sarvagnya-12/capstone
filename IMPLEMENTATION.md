@@ -381,6 +381,13 @@ Every entity in the class diagram is represented (directly or, for Admin, via `r
 
 ### Step 6 — Alembic Migration Setup & Initial Migration
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- Migration file named `0001_initial_schema.py` (matching the plan's naming convention) by generating with `alembic revision --rev-id 0001`, rather than accepting Alembic's default opaque-hash revision ID.
+- **Real bug caught by the round-trip verification this step requires**: Alembic's autogenerate does not emit `DROP TYPE` for Postgres native enums in `downgrade()` — it only manages tables/columns, treating named enum types as out of scope. The first `alembic downgrade base` → `alembic upgrade head` cycle failed with `DuplicateObject: type "persona_source" already exists`, because the 4 enum types (`user_role`, `simulation_status`, `persona_source`, `sentiment_label`) survived the downgrade. Fixed by adding explicit `sa.Enum(name=...).drop(op.get_bind(), checkfirst=False)` calls at the end of `downgrade()` for all four types, after their dependent tables are dropped. Re-ran the full upgrade → downgrade → upgrade cycle clean afterward. This is exactly the kind of issue the plan's own verification step (a real round-trip, not just applying once) is designed to catch.
+- `alembic/env.py` reads `DATABASE_URL` from `app.core.config.settings` (not `alembic.ini`'s static value) — `alembic.ini`'s `sqlalchemy.url` left blank with a comment pointing to this.
+
 #### When
 Immediately after Step 5.
 
