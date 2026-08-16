@@ -16,4 +16,24 @@ A GAN-centric generative AI framework for pre-launch product simulation and prod
 - `Capstone Docs/` — source PDFs the PRD was reconstructed from.
 - `Capstone Dataset (Archived)/` — a separately maintained, out-of-scope dataset-extraction pipeline; consumed only as an external batch data source (see `IMPLEMENTATION.md` Phase 5).
 
+## Local Development
+
+Run each piece in its own terminal, from the repo root:
+
+```
+# 1. Database
+docker compose up db
+
+# 2. Backend (in backend/, after: python -m venv .venv; pip install -r requirements.txt; copy .env.example .env)
+cd backend
+.venv\Scripts\activate
+uvicorn app.main:app --reload
+
+# 3. Frontend (in frontend/, after: npm install; copy .env.example .env)
+cd frontend
+npm run dev
+```
+
+Copy each `.env.example` (root, `backend/`, `frontend/`) to `.env` before first run — the defaults are already consistent with each other (Postgres user/password/db, API base URL, CORS origin).
+
 See `IMPLEMENTATION.md` for current build status and the next step.

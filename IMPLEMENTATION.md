@@ -272,6 +272,14 @@ Frontend dev server starts cleanly; all placeholder routes render; API client is
 
 ### Step 4 — Local Development Environment
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / deviations from the literal step text above:**
+- **`backend/app/core/config.py` needed no actual change** — `DATABASE_URL` was already set correctly in `backend/.env.example` back in Step 2 (with a comment already anticipating this step). The "Files to Modify" line was satisfied by confirmation, not an edit.
+- **`README.md` documentation added** despite not being explicitly listed under Step 4's "Files to Modify" — the Implementation Details paragraph above explicitly calls for it ("Document in `README.md` the three-terminal local workflow"), so it was treated as required.
+- **Blocking discovery, resolved with the user before implementing:** Docker was not installed on this machine at all when this step was first attempted (no `docker` command, no WSL2, no admin rights available in-session to install either). The user installed Docker Desktop themselves (with WSL2) between sessions. Verification then required working around a stale `PATH` in the assistant's own shell session (Docker's install location was correctly in the machine-level `PATH`, just not yet in already-open shell processes) — resolved by prefixing the full path in verification commands; does not affect the user's own terminal sessions.
+- Verification went beyond `pg_isready` — also confirmed a real SQLAlchemy connection using the backend's actual `Settings`/`.env` (`SELECT 1`, `SHOW server_version` → Postgres 16.15), which is the strongest available proof of this step's actual Expected Result.
+
 #### When
 After Steps 2 and 3 exist (it wires both together with a database).
 
