@@ -218,6 +218,14 @@ Backend starts without error; health check responds; `.env.example` documents al
 
 ### Step 3 — Frontend Project Scaffold (React + Vite)
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / deviations from the literal step text above:**
+- **Route list corrected against what Phase 14 actually expects later.** The original text above listed `/reports` as a stub route, but no later step (Steps 33–37) ever creates or references a `ReportsPage` — report download ends up as a button on `DashboardPage` (Step 37). Meanwhile Step 35 explicitly expects to "replace a placeholder" for `SimulationRunPage.tsx` at `/simulations/:id`, which the original route list never included. Implemented routes/pages: `/login` (LoginPage), `/register` (RegisterPage), `/products/new` (ProductUploadPage), `/simulations/new` (ScenarioConfigPage), `/simulations/:id` (SimulationRunPage — added), `/dashboard` (DashboardPage), `/admin` (AdminPage) — `/reports` dropped. Root `/` redirects to `/login`. Discussed with and approved by the user before implementing.
+- **`fetch` chosen over `axios`** for `api/client.ts` (the plan left this as "axios (or native fetch wrapper)") — a thin `apiFetch<T>()` wrapper handles JSON headers and error unwrapping in one place, avoiding an extra dependency the stack doesn't need.
+- **Tooling reflects the current Vite scaffold** (`create-vite@9.1.2`): React 19, Vite 8, TypeScript 6.0, and `oxlint` in place of ESLint (the template's own current default linter) — not a deviation from intent, just what "the standard template" now produces. `tsconfig.json` split into `tsconfig.json`/`tsconfig.app.json`/`tsconfig.node.json` per current Vite convention.
+- Removed the template's demo content (hero/counter/doc-links in `App.tsx`, its demo assets and CSS) and its own nested `.gitignore`/`README.md` (redundant with the root `.gitignore` from Step 1) as part of scaffolding — `App.tsx` is now a minimal layout shell rendering an `<Outlet />`.
+
 #### When
 Can be done in parallel with Step 2 (independent toolchains) once Step 1 is complete.
 
