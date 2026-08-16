@@ -41,10 +41,16 @@ _ENGAGEMENT_LENGTH_CAP = 200
 _NUDGED_PERTURBATION_RADIUS = 0.15
 
 
-def _engagement_proxy(text: str) -> float:
+def engagement_proxy(text: str) -> float:
     """Crude proxy for "how much the persona had to say" -- reaction length
     normalized to [0, 1], per this step's own plan text suggesting feedback
-    length/specificity as a stand-in absent an explicit engagement field."""
+    length/specificity as a stand-in absent an explicit engagement field.
+
+    Public (Step 30): Feedback.engagement_score is never actually persisted
+    anywhere in the pipeline (Steps 21/23/24 all leave it null), so the
+    dashboard aggregation endpoint recomputes it the same way this module's
+    own score_variants() does, rather than querying a column that's always
+    empty or duplicating this logic in a second place."""
     return min(len(text) / _ENGAGEMENT_LENGTH_CAP, 1.0)
 
 
@@ -75,7 +81,7 @@ def score_variants(
     for variant_id, rows in by_variant.items():
         sentiment_scores = [r.sentiment_score for r in rows if r.sentiment_score is not None]
         likelihoods = [r.purchase_likelihood for r in rows if r.purchase_likelihood is not None]
-        engagements = [_engagement_proxy(r.qualitative_text) for r in rows]
+        engagements = [engagement_proxy(r.qualitative_text) for r in rows]
 
         mean_sentiment = sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0.0
         mean_likelihood = sum(likelihoods) / len(likelihoods) if likelihoods else 0.0
