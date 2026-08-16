@@ -75,11 +75,19 @@ def load_generator(checkpoint_path: Path = DEFAULT_CHECKPOINT_PATH, device: Opti
     return generator
 
 
-def generate_image(generator: torch.nn.Module, seed: int, truncation_psi: float = 0.7) -> torch.Tensor:
-    """Runs one forward pass from a seeded random latent vector, returning a
-    (3, *TARGET_SIZE) float tensor in [0, 1]."""
+def random_latent(seed: int, z_dim: int) -> torch.Tensor:
+    """Deterministic random latent vector for a given seed, shape (1, z_dim)."""
+    return torch.from_numpy(np.random.RandomState(seed).randn(1, z_dim).astype("float32"))
+
+
+def generate_image_from_latent(generator: torch.nn.Module, z: torch.Tensor, truncation_psi: float = 0.7) -> torch.Tensor:
+    """Runs one forward pass from an explicit latent vector z (shape (1, z_dim)),
+    returning a (3, *TARGET_SIZE) float tensor in [0, 1]. Lower-level than
+    generate_image() -- used directly when nearby latent-space perturbations
+    around a shared anchor are needed (Step 16), not just an independent
+    random draw per seed."""
     device = next(generator.parameters()).device
-    z = torch.from_numpy(np.random.RandomState(seed).randn(1, generator.z_dim).astype("float32")).to(device)
+    z = z.to(device)
     label = torch.zeros([1, generator.c_dim], device=device)
 
     with torch.no_grad(), _suppress_plugin_setup_noise():
@@ -89,3 +97,10 @@ def generate_image(generator: torch.nn.Module, seed: int, truncation_psi: float 
             img = F.interpolate(img, size=TARGET_SIZE, mode="bilinear", align_corners=False)
 
     return img[0].cpu()
+
+
+def generate_image(generator: torch.nn.Module, seed: int, truncation_psi: float = 0.7) -> torch.Tensor:
+    """Runs one forward pass from a seeded random latent vector, returning a
+    (3, *TARGET_SIZE) float tensor in [0, 1]."""
+    z = random_latent(seed, generator.z_dim)
+    return generate_image_from_latent(generator, z, truncation_psi=truncation_psi)

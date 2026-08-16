@@ -878,6 +878,16 @@ Immediately after Step 15.
 #### Objective
 Produce the "N product design variants" FR#4 calls for (PRD §9), controllably varying the attributes named in the PRD (color, texture, layout, branding presentation).
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- **Base-image-conditioned GAN inversion, explicitly named in this step's own Implementation Details, was deliberately not implemented.** The plan's text anticipated a pretrained (not from-scratch) checkpoint and pre-authorized "documented, coarser controls" when clean disentangled directions aren't available — but the specific checkpoint in use (Step 15's AFHQ-cat) makes projecting an actual uploaded *product photo* into its latent space worse than just coarse: it would converge toward a meaningless "closest cat" approximation, not a useful starting point, while adding real optimizer latency for no benefit. Documented this reasoning in full at the top of `inference.py` rather than silently skipping it. Each product instead gets a deterministic per-product anchor seed (hash of `product_id`), so results are still reproducible per product without inversion.
+- **Genuine nearby latent-space perturbation, not just distinct random seeds**: extended `model.py` with `generate_image_from_latent()` (accepts a raw latent tensor) and `random_latent()`, refactoring `generate_image()` into a thin wrapper — this lets `inference.py` compute a shared anchor latent plus small (`radius=0.4`) offsets per variant, which is mathematically a real "nearby perturbation" (confirmed visually: variants share a recognizably similar cat pose/structure, not four unrelated animals).
+- **Color control is real and works precisely**: HSV hue-shift post-processing, verified by generating 4 variants at hue 0°/90°/180°/270° and visually confirming the exact expected color-wheel progression (orange → green → blue → pink) on the same underlying cat.
+- **`branding_style` has no real backing** — documented plainly in both the module docstring and each variant's `attributes.note` field rather than inventing a fake mechanism to look more complete than it is.
+- Extended `storage_service.py` with `save_pil_image()` (parallel to the existing `save_upload()` for `UploadFile`s) since GAN output is an in-memory `PIL.Image`, not an uploaded file — small, consistent addition, not in the step's literal file list.
+- Verified against real DB rows (no API exists yet for creating a Simulation — that's Steps 27–28 — so test `User`/`Product`/`Simulation` rows were inserted directly for this step's verification): `generate_variants_for_simulation()` with `n=4` produced 4 distinct `product_variants` rows and 4 distinct image files in ~4 seconds on the GPU; **viewed all 4 images directly**, not just checked file sizes/shapes, to confirm they're genuinely different pictures, not duplicates with different metadata.
+
 #### What to Develop
 An inference function that takes a product's preprocessed image plus a requested variant count, and returns N generated variant images with recorded attribute metadata.
 
