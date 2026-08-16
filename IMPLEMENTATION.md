@@ -965,6 +965,15 @@ After Step 16 (needs generated variants to score).
 #### Objective
 Close Open Decision #5's realism-metric gap: give generated variants an objective, standard realism score.
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / decisions made (implemented directly, per user's fast-track instruction):**
+- **FID is computed once per generation batch, not per variant** — all N variants from one `generate_variants_for_simulation()` call share a single `fid_score`. This is a deliberate, documented design choice, not a shortcut: FID is mathematically a set-vs-set statistic (fits a Gaussian to each set's InceptionV3 features), so "one variant's own FID" isn't a meaningful concept. Stated plainly in `evaluation.py`'s docstring.
+- Added `torch-fidelity` to `requirements.txt` — required by `torchmetrics`'s FID implementation at runtime, not documented in the plan text (which only names `torchmetrics`).
+- **Real bug found and fixed during integration**: `torch.stack()` failed the first time this ran against a real product, because the unprocessed original upload (its native resolution) and the 256×256 preprocessed/generated images aren't the same shape. Fixed by resizing every image to `TARGET_SIZE` before stacking, reusing the same constant Steps 12/15/16 already share.
+- `compute_fid()` returns `None` (not a misleading NaN/Inf) when the sample is too degenerate (fewer than 2 images in either set) for FID's covariance estimate to mean anything — this is the "documented limitation" the plan's completion criteria calls for, enforced in code rather than left as a comment only.
+- Verified both required cases directly: (1) end-to-end against a real uploaded product — 4 variants, all with the same non-null, finite `fid_score` persisted in the DB; (2) the plan's explicit degraded-vs-normal comparison — a deliberately noise-corrupted batch scored **409 vs. 131** for a normal batch, confirming FID is correctly oriented (higher = worse) and meaningfully discriminating even at this small sample size, not just returning a number.
+
 #### What to Develop
 FID (Fréchet Inception Distance) computation between a reference image set and generated variants.
 
