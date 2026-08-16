@@ -155,6 +155,16 @@ Repository is git-initialized, `.gitignore` is in place and correct, initial com
 
 ### Step 2 — Backend Project Scaffold (FastAPI)
 
+**Status: ✅ Completed (2026-08-17).**
+
+**Implementation notes / deviations from the literal step text above:**
+- **`LLM_PROVIDER` was deliberately left out** of `Settings` in this step, despite being named in the Implementation Details paragraph above — Step 20's own text lists `core/config.py` under its "Files to Modify" with the explicit action "add `LLM_PROVIDER`...", confirming that field belongs to Step 20, not here. Settings implemented now: `DATABASE_URL`, `JWT_SECRET_KEY`, `JWT_ALGORITHM`, `JWT_EXPIRE_MINUTES`, `STORAGE_ROOT`, `ENVIRONMENT`.
+- **Added `CORS_ORIGINS`** (comma-separated, default `http://localhost:5173`) — not named as a field in the plan text, but required to fulfil the same paragraph's "mounts a CORS middleware (configurable allowed origins...)" sentence. Verified via a real CORS preflight request.
+- **Structured JSON logging** implemented with a small inline formatter class in `main.py` (standard library `logging` only, no new dependency) rather than a separate file, since no logging-specific file was listed in "Files to Create." Note: this configures the *root* logger — Uvicorn's own `uvicorn`/`uvicorn.error` loggers install their own handlers/formatting on top (standard Uvicorn behavior) and stay in Uvicorn's default text format; application code's own loggers (added from Step 11 onward) will flow through the JSON root handler as intended.
+- **`requirements.txt` locked to exact versions**, not the minimum-version floors originally drafted — installed the plan's 12 named packages fresh, confirmed a clean install (`pip check`: no broken requirements) and a working server, then pinned to the exact resolved versions (`fastapi==0.141.1`, `uvicorn[standard]==0.52.3`, `pydantic-settings==2.15.0`, `sqlalchemy==2.0.52`, `alembic==1.19.1`, `psycopg[binary]==3.3.4`, `passlib[bcrypt]==1.7.4`, `python-jose[cryptography]==3.5.0`, `python-multipart==0.0.32`, `pillow==12.3.0`, `pytest==9.1.1`, `httpx==0.28.1`) for reproducibility.
+- **Deleted `backend/app/.gitkeep`** — redundant now that `app/` contains real files (mirrors the same convention used for the dataset pipeline's placeholders, noted in Step 1).
+- Confirmed this machine's Python must be invoked as `python`, not `python3` (the latter hits the Windows Store alias stub) — relevant for every future step's commands.
+
 #### When
 Immediately after Step 1. Every backend step depends on this scaffold existing.
 
