@@ -15,6 +15,7 @@ python-multipart==0.0.32
 pillow==12.3.0
 pytest==9.1.1
 httpx==0.28.1
+pytest-cov==7.0.0
 
 # GAN engine (Step 15+). CUDA build -- install with:
 #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126

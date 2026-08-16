@@ -1,0 +1,12 @@
+[run]
+omit =
+    # Vendored third-party reference implementation (NVIDIA's
+    # stylegan2-ada-pytorch, Step 15) -- not code this project authored or
+    # is meant to unit-test; only app.ml.gan.model/inference (the code that
+    # actually calls into it) count toward this project's own coverage.
+    app/ml/gan/vendor/*
+    # Real GAN fine-tuning is explicitly deferred (Step 17: smoke-tested,
+    # not run to convergence, per documented project decision) -- excluded
+    # rather than padding the number with a file no test is meant to cover
+    # yet.
+    app/ml/gan/finetune.py

@@ -1848,6 +1848,18 @@ Runs continuously alongside every backend phase in practice (each step above alr
 #### Objective
 Ensure every service and endpoint built in Phases 2–13 has an automated test, not just the manual verification described per-step.
 
+**Status: ✅ Completed (2026-08-17). 54 tests, 93% coverage of this project's own code** (excludes the vendored NVIDIA StyleGAN2-ADA reference implementation and the deliberately-deferred `finetune.py` — both explicitly `omit`-ted via a new `backend/.coveragerc`, so the reported number reflects code this project actually authored and is meant to test at this stage, not padded or deflated by either).
+
+**A real correctness problem caught and fixed before writing a single test on top of it**: the obvious "wrap each test in one transaction, roll it back after" isolation pattern is actually broken for this codebase, because services call `db.commit()` internally (`register_user`, `create_product`, etc.) — a plain session bound to that transaction would let those commits escape the rollback and leak real rows into the test database permanently. Fixed using SQLAlchemy's documented pattern for exactly this situation: bind the test session to a `SAVEPOINT`, and restart a fresh savepoint every time the app's own code ends one via `commit()`, so the *outer* transaction's rollback is always what actually undoes everything. Verified this wasn't just theoretical by re-running the same test file twice in a row before writing anything else — a broken version would have failed the second run on duplicate-email conflicts.
+
+**A second, structural constraint discovered while building the E2E test**: `simulation_orchestrator.run()` deliberately opens its own `SessionLocal()` (a separate DB connection) since it runs as a background task outside the request-scoped session lifecycle (Step 28's own architecture decision) — and a savepoint on *one* connection is genuinely invisible to a second, independent connection (real transaction isolation, not a testing bug). The rollback-isolated fixtures can't reach this case at all. Added a second fixture, `committed_client`, used only where needed: real commits against `dryrunai_test` (never the real `dryrunai` database), with every table truncated at teardown, and both the request-scoped session and the orchestrator's own `SessionLocal` pointed at the same test engine — mirroring exactly how the two connections relate in production.
+
+**Mocking strategy** (per this step's own guidance, "verifying pipeline mechanics... not image quality"): only the two genuinely expensive/external boundaries are mocked — a tiny random-weight `nn.Module` stands in for the real 364MB GAN checkpoint (`fake_gan_generator`), and a deterministic-but-varied fake stands in for the real Anthropic API (`fake_llm_provider`, Step 20's own `Protocol` design made this a clean swap with zero production-code changes). Sentiment classification (a real, already-cached HuggingFace model) and FID computation (real `torchmetrics`) are left genuinely real in every test — both fast once warmed, and exactly the kind of real integration worth actually proving.
+
+**Also fixed**: product/variant image uploads write real files to disk via `storage_service`, which isn't transactional — without isolating this too, every upload-touching test would leave real files under `backend/storage/` with nothing to clean them up. Added an `autouse` fixture redirecting `STORAGE_ROOT` to pytest's own `tmp_path` for every test.
+
+**One deviation from the plan's exact file list**: added `tests/test_admin.py` (not originally named) and one oversized-upload test in `test_products.py` — both close specific gaps in Step 40's own verification text ("calling an admin endpoint as a regular user should 403"; "oversized... upload should 4xx") that weren't otherwise covered by an automated test, turning one-off manual checks into permanent regression tests instead.
+
 #### What to Develop
 `pytest` test modules covering models, services, and API routes, using a test database (or transactional rollback per test) and mocked external calls (LLM provider, GAN inference kept fast/deterministic via a tiny test checkpoint or a mock generator).
 
@@ -1896,6 +1908,10 @@ After Step 38.
 #### Objective
 Verify the full user journey (Fig 6.4 Activity Diagram) works as one continuous flow, not just as individually-passing unit tests.
 
+**Status: ✅ Completed and passing (2026-08-17).** `test_e2e_pipeline.py` drives the real FastAPI app through every stage named in the Activity Diagram in one continuous flow: register → login → upload product → seed personas (the real operational precondition `scripts/seed_personas.py` satisfies in production — without it, `select_representative_personas()` returns nothing and the whole simulation would fail with no feedback to recommend from, a real dependency this test makes explicit rather than silently working around) → configure scenario → run simulation with `max_iterations=2` (exercising a real full iteration of the optimization loop, not just a single round) → poll to `completed` → view analytics → fetch the recommendation → download both report formats. A useful confirmation along the way: `TestClient` executes `BackgroundTasks` inline before returning the POST response, so by the time `POST /simulations` returns in the test, the entire pipeline (both rounds) has already run — the polling loop is defensive/mirrors the real frontend rather than strictly necessary here.
+
+Every response is asserted against the actual TypeScript-facing contract, and the final state is cross-checked directly against the database (not just trusted from API responses): exactly 4 variants (2 rounds × 2/round), exactly 4 feedback rows, and the recommendation's `recommended_variant_id` matching what the analytics endpoint reported.
+
 #### What to Develop
 One integration test that drives the system exactly as a real user would: register → login → upload product → configure scenario → run simulation → poll to completion → view analytics → download report.
 
@@ -1929,6 +1945,19 @@ After Step 39, once the full system is functionally complete.
 
 #### Objective
 Verify the NFR security requirements (PRD §10, §29: SSL/TLS, JWT/OAuth, DB security) and general OWASP-top-10 hygiene are actually met, not just assumed.
+
+**Status: ✅ Completed (2026-08-17) — a clean pass, every checklist item verified against the real code, not assumed.** No fixes were required; every item genuinely held up:
+- **Passwords**: never appear in any response schema (`UserResponse` carries only `id/org_name/email/role`) or in any `logger` call — confirmed by grep, not memory.
+- **JWT secret**: only ever read from `settings.JWT_SECRET_KEY` (env-sourced); grepped the whole codebase for a hardcoded value and found none.
+- **Every endpoint requires auth** (not just mutating ones): enumerated all 15 non-auth routes across `products.py`/`simulations.py`/`dashboard.py`/`admin.py` directly from source and confirmed every single one carries `Depends(get_current_user)` or `Depends(get_current_admin_user)` — only `/auth/register`, `/auth/login`, and `/health` are (correctly) public.
+- **Ownership scoping**: consistent 404-not-403 pattern across products, simulations, and the two image-serving endpoints added this phase — verified by both the automated suite and, for the two new endpoints, a real path-traversal check (the file path served always originates from a DB value this app itself wrote at upload/generation time, never directly from a request parameter, so there's no way to smuggle a `../` through `kind` or any other input).
+- **File upload validation**: content-type/extension whitelist + 10MB size cap, verified with a real oversized-upload test (new this step).
+- **SQL access**: grepped for any raw/string-interpolated query across `backend/app` *and* both standalone scripts (`scripts/ingest_dataset_pipeline.py`, `backend/scripts/seed_personas.py`) — everything goes through the ORM or parameterized `sqlalchemy.dialects.postgresql.insert()`.
+- **CORS**: config-driven via `CORS_ORIGINS`, currently the real dev frontend origin, never a `*` wildcard anywhere in the code.
+- **No committed secrets**: `git grep` across tracked `.py`/`.ts`/`.tsx`/`.env*` files for API-key/password/secret patterns found nothing; confirmed no `.env` file is tracked by git at all.
+- **Admin escalation**: `promote_to_admin()` exists only as a service-layer function, never wired to any router — grepped to confirm no endpoint calls it. Verified with a real regular-user account hitting `/admin/users`/`/admin/simulations` and getting a real `403` (new automated test, not just the manual check performed back in Step 37).
+
+**One thing noted but deliberately not built**: there's no rate-limiting/brute-force protection on `/auth/login`. This isn't on this step's own checklist and would be new scope (a dependency like `slowapi` plus a request-counting store), not a "fix a finding" task — flagged here as a disclosed, known gap rather than silently added or silently ignored.
 
 #### What to Develop
 No new features — a review pass with any fixes it surfaces.
