@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Literal, Optional
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # backend/.env, resolved from this file's own location -- not the process's
@@ -14,6 +15,21 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=_ENV_FILE, env_file_encoding="utf-8", extra="ignore")
 
     DATABASE_URL: str
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def _require_psycopg_driver(cls, value: str) -> str:
+        """Only psycopg (v3) is installed, not psycopg2 -- SQLAlchemy's
+        bare `postgresql://` defaults to psycopg2 and would fail to find a
+        driver. Every hand-written .env in this project already spells out
+        `postgresql+psycopg://`, but a managed Postgres provider's
+        auto-generated connection string (e.g. Render's `fromDatabase`
+        wiring, Step 42) hands back the bare form -- normalize it here so
+        that auto-wiring works without a manual edit-the-URL runbook step."""
+        for bare_prefix in ("postgresql://", "postgres://"):
+            if value.startswith(bare_prefix):
+                return "postgresql+psycopg://" + value[len(bare_prefix):]
+        return value
 
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"

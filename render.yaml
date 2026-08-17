@@ -1,0 +1,78 @@
+# Render Blueprint (Step 42) -- deploys via Render's dashboard: "New +" ->
+# "Blueprint" -> connect this repo -> Render reads this file automatically.
+# See docs/deployment.md for the full runbook, including two required
+# post-deploy steps this file can't do on its own (see the CORS_ORIGINS
+# and VITE_API_BASE_URL placeholders below).
+#
+# Plans are set to the cheapest/free-eligible options as of this writing --
+# Render's pricing and free-tier limits can change, so double-check
+# render.com/pricing before deploying if that matters for your budget.
+
+databases:
+  - name: dryrunai-db
+    plan: free
+    region: oregon
+    postgresMajorVersion: "16"
+
+services:
+  - name: dryrunai-backend
+    type: web
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    # Persists the GAN checkpoint (auto-downloaded once by entrypoint.sh --
+    # see Step 41/42 notes there) and uploaded/generated images across
+    # restarts and redeploys. Render's free web service plan does not
+    # support disks -- upgrade to a paid plan if you need this to survive
+    # restarts; on the free plan the checkpoint just re-downloads each time
+    # the service restarts, which is slow but not broken.
+    disk:
+      name: dryrunai-storage
+      mountPath: /app/storage
+      sizeGB: 2
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dryrunai-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: "60"
+      - key: ENVIRONMENT
+        value: prod
+      - key: CORS_ORIGINS
+        # PLACEHOLDER. The frontend's real onrender.com URL isn't known
+        # until after its first deploy -- see docs/deployment.md step 2 for
+        # the exact post-deploy update needed here.
+        value: https://REPLACE-WITH-FRONTEND-URL.onrender.com
+      - key: LLM_PROVIDER
+        value: anthropic
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-5
+
+  - name: dryrunai-frontend
+    type: web
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist
+    plan: free
+    region: oregon
+    envVars:
+      - key: VITE_API_BASE_URL
+        # PLACEHOLDER. Same issue as CORS_ORIGINS above, mirrored -- see
+        # docs/deployment.md step 2. Static sites bake this in at build
+        # time, so updating it requires a manual redeploy afterward, not
+        # just saving the env var.
+        value: https://REPLACE-WITH-BACKEND-URL.onrender.com
+    routes:
+      - source: "/<path*>"
+        destination: /index.html
+        action: rewrite
