@@ -1,0 +1,5 @@
+# entrypoint.sh runs inside a Linux container (Step 41) -- a Windows
+# checkout with core.autocrlf enabled would silently rewrite its line
+# endings to CRLF, which breaks the shebang line and every command inside
+# a Linux /bin/sh. Force LF regardless of the checkout platform's git config.
+*.sh text eol=lf

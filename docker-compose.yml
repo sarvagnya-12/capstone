@@ -16,5 +16,43 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-dryrunai}:${POSTGRES_PASSWORD:-dryrunai}@db:5432/${POSTGRES_DB:-dryrunai}
+      # No fallback default for the JWT secret -- unlike the Postgres
+      # credentials above, this must be a real, deliberately-chosen value
+      # (per backend/.env.example's own guidance), not something that
+      # silently works with a guessable default.
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-60}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
+      ENVIRONMENT: ${ENVIRONMENT:-prod}
+      LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
+    ports:
+      - "8000:8000"
+    volumes:
+      # Bind mount, not a named volume -- the GAN checkpoint (Step 15,
+      # 364MB, gitignored) already lives on the host at
+      # backend/storage/models/afhqcat.pkl; a named volume would start
+      # empty and need a separate copy-in step. Also means uploaded/
+      # generated images land back on the host, easy to inspect.
+      - ./backend/storage:/app/storage
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
 volumes:
   pgdata:
