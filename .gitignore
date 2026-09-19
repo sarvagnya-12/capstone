@@ -49,6 +49,20 @@ backend/storage/
 **/datasets/*/versions/
 **/datasets/*/reports/
 **/datasets/*/metadata/
+**/datasets/quality/
+
+# Real acquired source data (hundreds of MB; downloaded/derived by the scripts
+# in _ingestion_tools/, never hand-authored). The original 4-row sample_*.csv
+# fixtures alongside them stay tracked; brand_facts.csv (60 rows, the verified
+# Wikipedia/Wikidata output) is small enough to track as a record of what the
+# fetch actually returned.
+**/datasets/raw/zappos/
+**/datasets/raw/amazon/
+**/datasets/reviews/raw/amazon_reviews.jsonl
+**/datasets/market/raw/amazon_market.csv
+**/datasets/product_intelligence/raw/product_intelligence.csv
+**/_ingestion_tools/*.log
+**/_ingestion_tools/__pycache__/
 
 # --- OS cruft ---
 .DS_Store

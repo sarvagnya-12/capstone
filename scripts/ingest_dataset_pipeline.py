@@ -40,6 +40,12 @@ from datetime import date as date_cls
 from datetime import datetime, timezone
 from pathlib import Path
 
+# master_products.csv carries JSON reference arrays (review_refs etc.) that grow
+# with the data; at real scale the largest field is far past csv's 128 KB default
+# and DictReader raises "field larger than field limit". 2**31-1 is the largest
+# value the C long on Windows accepts.
+csv.field_size_limit(min(sys.maxsize, 2**31 - 1))
+
 BACKEND_ROOT = Path(__file__).resolve().parents[1] / "backend"
 sys.path.insert(0, str(BACKEND_ROOT))
 
@@ -134,16 +140,32 @@ def _coerce_row(row: dict, model, extra: dict) -> dict:
     return result
 
 
+# Postgres allows at most 65,535 bound parameters per statement. A single
+# multi-row INSERT of the whole file (fine for 4-row fixtures) fails at real
+# scale: 36,096 market rows x 16 columns is ~577K parameters. Batch size is
+# derived from the column count so every batch stays under the limit.
+PG_MAX_BIND_PARAMS = 65_535
+
+
 def upsert_rows(db: Session, model, rows: list[dict], pk_column: str, extra: dict) -> int:
     if not rows:
         return 0
-    values = [_coerce_row(row, model, extra) for row in rows]
-    stmt = pg_insert(model).values(values)
-    update_columns = {c.name: getattr(stmt.excluded, c.name) for c in model.__table__.columns if c.name != pk_column}
-    stmt = stmt.on_conflict_do_update(index_elements=[pk_column], set_=update_columns)
-    db.execute(stmt)
+    columns = list(model.__table__.columns)
+    batch_size = max(1, min(5_000, PG_MAX_BIND_PARAMS // len(columns)))
+    update_columns_names = [c.name for c in columns if c.name != pk_column]
+
+    written = 0
+    for start in range(0, len(rows), batch_size):
+        values = [_coerce_row(row, model, extra) for row in rows[start : start + batch_size]]
+        stmt = pg_insert(model).values(values)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=[pk_column],
+            set_={name: getattr(stmt.excluded, name) for name in update_columns_names},
+        )
+        db.execute(stmt)
+        written += len(values)
     db.commit()
-    return len(values)
+    return written
 
 
 def ingest(pipeline_root: Path, dataset_version: str, overrides: dict) -> dict:

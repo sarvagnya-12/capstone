@@ -1,0 +1,22 @@
+{
+  "_comment": "Market Service config override adding the Amazon collector. Passed via --config so 04_market_service/market_service/config/default_config.json stays untouched. load_config() deep-merges, but replaces lists wholesale, so both lists below repeat the original entries plus 'amazon'.",
+  "collector_plugins": [
+    "market_service.collectors.official",
+    "market_service.collectors.retail",
+    "market_service.collectors.marketplace",
+    "market_service.collectors.amazon"
+  ],
+  "supported_collectors": [
+    "nike",
+    "adidas",
+    "puma",
+    "new_balance",
+    "asics",
+    "zappos",
+    "foot_locker",
+    "jd_sports",
+    "stockx",
+    "goat",
+    "amazon"
+  ]
+}

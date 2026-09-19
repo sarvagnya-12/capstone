@@ -1,0 +1,11 @@
+# Runtime dependencies for the 7-stage dataset-extraction pipeline itself.
+#
+# Determined by grepping every stage package + shared/ for third-party imports:
+#   pandas  -> 06_knowledge_integration_service/.../master_exporter.py (.to_parquet)
+#   pyarrow -> required by pandas.to_parquet() as the parquet engine (not imported by name)
+#   Pillow  -> 02_asset_manager image validation/inspection
+#
+# Acquisition/conversion tooling has its own manifest: _ingestion_tools/requirements.txt
+pandas==2.2.3
+pyarrow==18.1.0
+Pillow==11.0.0

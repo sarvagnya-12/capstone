@@ -1,0 +1,15 @@
+# Dependencies for the data-acquisition and conversion tooling in this folder.
+# These are NOT dependencies of the 7-stage pipeline itself (see ../requirements.txt)
+# -- they exist only to fetch public datasets and reshape them into the CSV/JSONL
+# inputs each pipeline stage's collector already knows how to parse.
+#
+#   scipy           -> loading UT-Zappos50K's .mat metadata
+#   datasets        -> streaming Amazon Reviews 2023 from Hugging Face
+#   huggingface_hub -> datasets' transport layer / direct file access
+#   requests        -> UT-Zappos50K zip download, Wikipedia/Wikidata API calls
+#   tqdm            -> progress reporting on long, unattended acquisition runs
+scipy==1.14.1
+datasets==3.2.0
+huggingface_hub==0.27.0
+requests==2.32.3
+tqdm==4.67.1

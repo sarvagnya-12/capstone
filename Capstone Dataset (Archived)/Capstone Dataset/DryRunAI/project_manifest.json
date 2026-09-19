@@ -8,12 +8,12 @@
     "06_knowledge_integration_service",
     "07_dataset_quality_service"
   ],
-  "dataset_health_score": 0,
-  "last_updated_timestamp": "2026-07-14T00:00:00+05:30",
-  "market_record_count": 0,
-  "master_dataset_version": 0,
-  "master_product_count": 0,
-  "product_intelligence_record_count": 0,
-  "validation_timestamp": null,
-  "review_count": 0
+  "dataset_health_score": 17,
+  "last_updated_timestamp": "2026-09-19T13:12:09.522568+00:00",
+  "market_record_count": 36096,
+  "master_dataset_version": 1,
+  "master_product_count": 109808,
+  "product_intelligence_record_count": 41945,
+  "review_count": 496592,
+  "validation_timestamp": "2026-09-19T13:12:09.522568+00:00"
 }
