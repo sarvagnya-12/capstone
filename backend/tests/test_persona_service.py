@@ -55,10 +55,17 @@ def test_simulate_persona_reactions_variant_ids_scoping_regression(db_session, f
 
 
 def test_simulate_persona_reactions_without_llm_key_produces_marked_error_rows(db_session, monkeypatch):
-    """No fake_llm_provider fixture here -- exercises the real "no
-    ANTHROPIC_API_KEY configured" path (Steps 20-21's disclosed gap):
-    confirms it degrades to clearly-marked error rows rather than crashing
-    the whole simulation."""
+    """No fake_llm_provider fixture here -- exercises the real
+    misconfigured-provider path: confirms it degrades to clearly-marked error
+    rows rather than crashing the whole simulation.
+
+    Both settings are pinned deliberately. Clearing the API key alone used to
+    be enough because "anthropic" was the default provider, but the default is
+    now "ollama", which needs no key -- so on a machine with Ollama running
+    this test would otherwise make a real call and get a real reaction,
+    silently testing nothing. Pinning the provider keeps the intended
+    condition true regardless of the default or what's installed locally."""
+    monkeypatch.setattr("app.core.config.settings.LLM_PROVIDER", "anthropic")
     monkeypatch.setattr("app.core.config.settings.ANTHROPIC_API_KEY", None)
     simulation, variants = make_simulation_with_variants(db_session, n_variants=1)
     persona = make_persona(db_session, "NoKey")

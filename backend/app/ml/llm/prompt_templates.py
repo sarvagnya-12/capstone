@@ -12,6 +12,20 @@ from typing import Optional
 
 REACTION_TEXT_MAX_CHARS = 1000
 
+# The same contract parse_persona_reaction() enforces below, expressed as a
+# JSON schema. Providers that support schema-constrained decoding (Ollama's
+# `format` parameter) use this to make invalid output impossible at inference
+# time rather than something to detect and recover from afterwards. Kept here,
+# next to the parser, so the two can't drift apart.
+PERSONA_REACTION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "reaction_text": {"type": "string"},
+        "purchase_likelihood": {"type": "number"},
+    },
+    "required": ["reaction_text", "purchase_likelihood"],
+}
+
 
 def build_persona_reaction_prompt(
     persona_prompt_template: str,
