@@ -27,6 +27,75 @@ PERSONA_REACTION_SCHEMA = {
 }
 
 
+# Hue rotation in degrees -> the colour a shopper would actually name. The
+# generator produces variants by rotating hue around the product's own base
+# colour, so these are approximate families, not exact colour names; the
+# wording stays hedged ("shifted toward") rather than asserting a precise shade.
+_HUE_NAMES = [
+    (0, "the original colourway"),
+    (30, "a warmer, more orange-toned colourway"),
+    (60, "a yellow-toned colourway"),
+    (120, "a green-toned colourway"),
+    (180, "a cyan/teal-toned colourway"),
+    (240, "a blue-toned colourway"),
+    (300, "a purple/magenta-toned colourway"),
+]
+
+
+def describe_variant_for_persona(variant_attributes: dict) -> str:
+    """Render a variant as design language a shopper could react to.
+
+    Raw `ProductVariant.attributes` is generator bookkeeping -- anchor_seed,
+    perturbation_radius, generation_method, and a `note` describing
+    latent-space perturbation. Passing that dict into the prompt verbatim
+    (as this module originally did) asks the persona to react to the
+    implementation rather than the product, and they did: one recorded
+    reaction reads "I'm not impressed by this product design variant. The use
+    of latent-space perturbation...". Since every downstream stage --
+    sentiment, risk, optimisation scoring, the PMF score and the final
+    recommendation -- is computed from that feedback, the whole chain was
+    grading reactions to jargon.
+
+    Only fields a shopper could plausibly perceive are surfaced. Seeds and
+    method names are dropped rather than reworded, because there is no
+    shopper-meaningful version of them.
+    """
+    parts: list[str] = []
+
+    hue = variant_attributes.get("color_hue_shift_degrees")
+    if hue is not None:
+        try:
+            hue_value = float(hue) % 360
+        except (TypeError, ValueError):
+            hue_value = None
+        if hue_value is not None:
+            closest = min(_HUE_NAMES, key=lambda pair: min(
+                abs(hue_value - pair[0]), 360 - abs(hue_value - pair[0])
+            ))
+            parts.append(f"Colour: {closest[1]}")
+
+    index = variant_attributes.get("perturbation_index")
+    if index is not None:
+        # 1-based: "design variation 1" reads naturally, "variation 0" does not.
+        parts.append(f"Design variation {int(index) + 1} of the base product, "
+                     "with subtly different shaping and surface texture")
+
+    if variant_attributes.get("nudged_from_prior_round"):
+        parts.append("Refined from an earlier round based on customer feedback")
+
+    # Any genuinely descriptive attributes a future generator adds (color,
+    # texture, layout, branding_style -- the vocabulary the schema documents)
+    # pass through as-is, since those are already shopper-facing.
+    for key in ("color", "texture", "layout", "branding_style", "material"):
+        value = variant_attributes.get(key)
+        if value:
+            parts.append(f"{key.replace('_', ' ').capitalize()}: {value}")
+
+    if not parts:
+        return "A design variation of the product."
+    return "; ".join(parts)
+
+
 def build_persona_reaction_prompt(
     persona_prompt_template: str,
     variant_attributes: dict,
@@ -45,7 +114,7 @@ def build_persona_reaction_prompt(
         f"{persona_prompt_template}\n\n"
         "You are reacting, in character as this persona, to a product design variant "
         "being considered for launch.\n"
-        f"Product variant attributes: {json.dumps(variant_attributes)}\n"
+        f"The design variant: {describe_variant_for_persona(variant_attributes)}\n"
         "Launch scenario:\n" + "\n".join(scenario_lines) + "\n\n"
         "Respond with ONLY a JSON object (no other text, no markdown code fences) "
         "with exactly these two fields:\n"
