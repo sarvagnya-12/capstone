@@ -121,8 +121,12 @@ def test_factory_rejects_unknown_provider(monkeypatch):
 
 
 def _ollama_available() -> bool:
+    # Generous timeout deliberately: Ollama shares the same 6GB GPU as the GAN
+    # tests in this suite, and a 2s probe failed intermittently when run after
+    # them (passing in isolation, failing in the full run). A flaky test is
+    # worse than a slow one.
     try:
-        return requests.get("http://localhost:11434/api/tags", timeout=2).status_code == 200
+        return requests.get("http://localhost:11434/api/tags", timeout=15).status_code == 200
     except requests.exceptions.RequestException:
         return False
 

@@ -38,3 +38,9 @@ transformers==5.15.0
 # binary/system dependency (rules out weasyprint's need for a system
 # Pango/Cairo install), simpler for deployment.
 reportlab==5.0.0
+
+# GAN training from scratch (Step 17). FastGAN via lightweight-gan replaced
+# StyleGAN2 transfer learning after three measured failures; see
+# app/ml/gan/train_fastgan.py. pytorch-fid backs the package's own FID metric.
+lightweight-gan==1.2.1
+pytorch-fid==0.3.0

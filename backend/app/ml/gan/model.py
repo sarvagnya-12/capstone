@@ -36,6 +36,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+from app.core.config import settings
 from app.services.image_preprocessing import TARGET_SIZE
 
 _VENDOR_ROOT = Path(__file__).resolve().parent / "vendor" / "stylegan2_ada"
@@ -62,12 +63,32 @@ def _suppress_plugin_setup_noise():
     with contextlib.redirect_stdout(buffer):
         yield
 
-DEFAULT_CHECKPOINT_PATH = Path(__file__).resolve().parents[3] / "storage" / "models" / "afhqcat.pkl"
+# The StyleGAN2 checkpoint, still referenced by finetune.py's transfer-learning
+# path. It is no longer what the application generates from -- see
+# settings.GAN_CHECKPOINT.
+STYLEGAN2_CHECKPOINT_PATH = Path(__file__).resolve().parents[3] / "storage" / "models" / "afhqcat.pkl"
+DEFAULT_CHECKPOINT_PATH = Path(settings.GAN_CHECKPOINT)
 
 
 def load_generator(checkpoint_path: Path = DEFAULT_CHECKPOINT_PATH, device: Optional[str] = None) -> torch.nn.Module:
-    """Loads the pretrained StyleGAN2-ADA generator (G_ema) from a .pkl checkpoint."""
+    """Loads a generator, dispatching on checkpoint format.
+
+    `.pt` -> FastGAN trained from scratch on real product photos (Step 17's
+    working approach; see app/ml/gan/train_fastgan.py).
+    `.pkl` -> StyleGAN2-ADA, the original transfer-learning path. Kept working
+    and selectable so the earlier approach stays reproducible, even though
+    every attempt to fine-tune it ended worse than its own starting point.
+
+    Both return an object exposing `.z_dim` and producing a
+    (3, TARGET_SIZE) [0, 1] image via generate_image_from_latent().
+    """
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+
+    if Path(checkpoint_path).suffix == ".pt":
+        from app.ml.gan.fastgan import load_fastgan_generator
+
+        return load_fastgan_generator(checkpoint=Path(checkpoint_path), device=device)
+
     with open(checkpoint_path, "rb") as f:
         data = legacy.load_network_pkl(f)
     generator = data["G_ema"].to(device)
@@ -85,7 +106,16 @@ def generate_image_from_latent(generator: torch.nn.Module, z: torch.Tensor, trun
     returning a (3, *TARGET_SIZE) float tensor in [0, 1]. Lower-level than
     generate_image() -- used directly when nearby latent-space perturbations
     around a shared anchor are needed (Step 16), not just an independent
-    random draw per seed."""
+    random draw per seed.
+
+    Dispatches on generator type because the output conventions differ: the
+    StyleGAN2 rescale below ([-1, 1] -> [0, 1]) applied to FastGAN's output
+    would halve its contrast and wash every image out."""
+    from app.ml.gan.fastgan import FastGANGenerator, generate_image_from_latent as fastgan_generate
+
+    if isinstance(generator, FastGANGenerator):
+        return fastgan_generate(generator, z, truncation_psi=truncation_psi)
+
     device = next(generator.parameters()).device
     z = z.to(device)
     label = torch.zeros([1, generator.c_dim], device=device)
