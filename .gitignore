@@ -61,10 +61,13 @@ backend/storage/
 **/datasets/reviews/raw/amazon_reviews.jsonl
 **/datasets/market/raw/amazon_market.csv
 **/datasets/product_intelligence/raw/product_intelligence.csv
-# GAN training corpus: 25,023 images, 434MB, downloaded by
-# fetch_amazon_training_images.py. Regenerate with that script rather than
-# committing it; the model checkpoints it produces live under backend/storage/,
-# already ignored above.
+# GAN training corpus: 281,589 images, 4.22GB, downloaded by
+# fetch_amazon_training_images.py (grown from 25,023 -> 150,031 -> 281,589).
+# Regenerate with that script rather than committing it; it skips images it
+# already has, so re-running only fetches what is missing. The model
+# checkpoints it produces live under backend/storage/, already ignored above.
+# Moving this corpus to another machine is a manual copy -- see
+# TRAINING_TRANSFER.md.
 **/_ingestion_tools/gan_training_images/
 **/_ingestion_tools/*.log
 **/_ingestion_tools/__pycache__/

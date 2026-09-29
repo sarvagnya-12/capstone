@@ -31,6 +31,10 @@ selectable, so the earlier approach stays reproducible rather than deleted.
 
 Usage:
     python -m app.ml.gan.train_fastgan --images-dir <dir> --steps 20000
+
+For a large run on a faster GPU -- configuration by VRAM tier, the epoch
+arithmetic that decides step count, and how to score the result fairly against
+the current checkpoint -- see TRAINING_TRANSFER.md at the repo root.
 """
 
 from __future__ import annotations
@@ -63,6 +67,8 @@ def train(
     amp: bool,
     num_workers: int,
     resume: bool,
+    gradient_accumulate_every: int,
+    attn_res_layers: list[int],
 ) -> int:
     from lightweight_gan.lightweight_gan import Trainer
 
@@ -72,8 +78,20 @@ def train(
     if image_count == 0:
         raise SystemExit(f"No .jpg/.jpeg/.png files in {images_dir}")
 
+    effective_batch = batch_size * gradient_accumulate_every
+    epochs = (steps * effective_batch) / image_count
+
     print(f"training on {image_count:,} images from {images_dir}")
-    print(f"{image_size}px  batch={batch_size}  lr={lr}  steps={steps}")
+    print(f"{image_size}px  batch={batch_size} x accum={gradient_accumulate_every} "
+          f"= effective {effective_batch}  lr={lr}  steps={steps:,}")
+    # Printed up front because it is the number that decided this run's shape:
+    # the 150k/50k-step run reached only 2.67 epochs and its FID was still
+    # falling at the last checkpoint, i.e. it was step-starved rather than
+    # short of data. Seeing epochs before the run starts makes an
+    # under-trained configuration obvious in second one instead of hour thirty.
+    print(f"=> {steps * effective_batch:,} samples over {image_count:,} images = {epochs:.2f} epochs")
+    if attn_res_layers:
+        print(f"self-attention at resolutions: {attn_res_layers}")
     print(f"checkpoint every {save_every}, FID every {fid_every} over {fid_images} images\n")
 
     trainer = Trainer(
@@ -101,6 +119,20 @@ def train(
         aug_prob=aug_prob,
         aug_types=["translation", "cutout"],
         amp=amp,
+        # Raises the effective batch without raising VRAM, by summing gradients
+        # over several forward/backward passes before stepping. This is the
+        # lever for a GPU that is fast but not large: batch 16 x accum 4 has the
+        # gradient quality of batch 64 at the memory cost of 16.
+        gradient_accumulate_every=gradient_accumulate_every,
+        # Self-attention at the given feature-map resolutions. Empty (the
+        # default, and what every run so far used) means a purely convolutional
+        # generator, whose receptive field is local -- a plausible contributor
+        # to outputs that have shoe-like texture without shoe-like global
+        # shape. The package's README recommends [32] as the usual first
+        # addition. It costs VRAM and step time, and it changes the
+        # architecture, so a checkpoint trained with it cannot be resumed into
+        # a run without it, or vice versa.
+        attn_res_layers=attn_res_layers,
         # Must be explicit: the package defaults use_aim=True, and its own
         # ImportError handler for the optional `aim` tracker only prints a
         # warning before dereferencing self.aim anyway, so leaving the default
@@ -172,10 +204,24 @@ def main() -> int:
     parser.add_argument("--num-workers", type=int, default=4,
                         help="Dataloader workers; 0/None makes JPEG decode the bottleneck (10x slower)")
     parser.add_argument("--amp", action="store_true", help="Mixed precision; lower VRAM and faster on this 6GB card")
+    parser.add_argument("--gradient-accumulate-every", type=int, default=1,
+                        help="Sum gradients over N batches before stepping; effective batch = batch-size x N, "
+                             "at the VRAM cost of batch-size alone")
+    parser.add_argument("--attn-res-layers", default="",
+                        help="Comma-separated feature-map resolutions to add self-attention at, e.g. '32' or "
+                             "'32,64'. Empty (default) reproduces every run so far. Changes the architecture, "
+                             "so such a checkpoint is not resume-compatible with a run that omits it.")
     parser.add_argument("--resume", action="store_true",
                         help="Continue from the latest checkpoint of this run name")
     parser.add_argument("--fresh", action="store_true", help="Delete any existing run of this name first")
     args = parser.parse_args()
+
+    try:
+        attn_res_layers = [int(part) for part in args.attn_res_layers.split(",") if part.strip()]
+    except ValueError:
+        raise SystemExit(f"--attn-res-layers must be comma-separated integers, got {args.attn_res_layers!r}")
+    if args.gradient_accumulate_every < 1:
+        raise SystemExit("--gradient-accumulate-every must be at least 1")
 
     if args.fresh:
         for sub in ("models", "results"):
@@ -202,6 +248,8 @@ def main() -> int:
         amp=args.amp,
         num_workers=args.num_workers,
         resume=args.resume,
+        gradient_accumulate_every=args.gradient_accumulate_every,
+        attn_res_layers=attn_res_layers,
     )
 
 

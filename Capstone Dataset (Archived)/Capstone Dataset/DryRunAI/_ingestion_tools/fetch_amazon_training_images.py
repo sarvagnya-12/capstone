@@ -75,6 +75,12 @@ def candidate_urls(limit: int) -> list[tuple[str, str]]:
 
 
 def fetch_one(asin: str, url: str, session: requests.Session) -> str | None:
+    # Already have it: growing the corpus re-walks the metadata from the top,
+    # so without this an expansion run re-downloads every image it already has
+    # before reaching new ones.
+    if (OUT_DIR / f"{asin}.jpg").exists():
+        return asin
+
     try:
         response = session.get(url, timeout=30)
         response.raise_for_status()

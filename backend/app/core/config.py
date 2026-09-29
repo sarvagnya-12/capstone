@@ -39,11 +39,19 @@ class Settings(BaseSettings):
 
     # Generator checkpoint used for variant generation (Step 16/17).
     # A `.pt` is a FastGAN trained from scratch on real product photos; a
-    # `.pkl` is the original StyleGAN2-ADA path, still selectable. Defaults to
-    # the best-FID checkpoint of the shoes run (step 14,000, FID 287.7) rather
-    # than the last one, because training was not monotonic -- FID rose again
-    # to ~328 by step 18,000.
-    GAN_CHECKPOINT: str = str(_BACKEND_ROOT / "storage" / "fastgan" / "models" / "shoes" / "model_28.pt")
+    # `.pkl` is the original StyleGAN2-ADA path, still selectable.
+    #
+    # Defaults to the 150k-image run's final checkpoint (step 50,000). Scored
+    # against a common 256-image reference set -- necessary because each run's
+    # own FID is measured against its own training distribution, and a more
+    # diverse target inflates the number regardless of model quality:
+    #     shoes/model_28.pt      (25k imgs,  step 14,000)  FID 313.8
+    #     shoes150k/model_18.pt  (150k imgs, step 45,000)  FID 278.2
+    #     shoes150k/model_20.pt  (150k imgs, step 50,000)  FID 274.0  <- this
+    # Unlike the 25k run, which peaked at step 14,000 and then degraded, the
+    # 150k run was still improving at the end, so the last checkpoint is also
+    # the best one.
+    GAN_CHECKPOINT: str = str(_BACKEND_ROOT / "storage" / "fastgan" / "models" / "shoes150k" / "model_20.pt")
 
     # Comma-separated list of frontend origins allowed to call this API.
     CORS_ORIGINS: str = "http://localhost:5173"
