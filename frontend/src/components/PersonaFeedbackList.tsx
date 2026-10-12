@@ -1,22 +1,37 @@
-import type { PersonaFeedbackEntry } from '../api/dashboard'
+import type { CustomerReaction } from '../api/dashboard'
 
-export default function PersonaFeedbackList({ feedback }: { feedback: PersonaFeedbackEntry[] }) {
-  if (feedback.length === 0) {
-    return <p className="muted">No persona feedback recorded.</p>
+const INTENT_CLASS: Record<CustomerReaction['buying_intent'], string> = {
+  'Likely to buy': 'positive',
+  Undecided: 'warning',
+  'Unlikely to buy': 'negative',
+}
+
+const TONE_CLASS: Record<CustomerReaction['reaction'], string> = {
+  Positive: 'positive',
+  Neutral: 'neutral',
+  Critical: 'negative',
+  'Not classified': 'neutral',
+}
+
+export default function PersonaFeedbackList({ reactions }: { reactions: CustomerReaction[] }) {
+  if (reactions.length === 0) {
+    return <p className="muted">No customer reactions recorded.</p>
   }
 
   return (
     <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-      {feedback.map((entry) => (
-        <li key={entry.persona_id} style={{ marginBottom: '0.6rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <strong>{entry.persona_name}</strong>
-            {entry.sentiment_label && <span className={`badge ${entry.sentiment_label}`}>{entry.sentiment_label}</span>}
+      {reactions.map((r) => (
+        <li key={r.profile} className="reaction">
+          <div className="reaction-head">
+            <strong>{r.profile}</strong>
+            <span>
+              <span className={`badge ${INTENT_CLASS[r.buying_intent]}`}>
+                {r.buying_intent} ({r.likelihood_pct}%)
+              </span>{' '}
+              <span className={`badge ${TONE_CLASS[r.reaction]}`}>{r.reaction} tone</span>
+            </span>
           </div>
-          <p style={{ margin: '0.25rem 0' }}>{entry.qualitative_text}</p>
-          <span className="muted" style={{ fontSize: '0.8rem' }}>
-            Purchase likelihood: {(entry.purchase_likelihood * 100).toFixed(0)}%
-          </span>
+          <p style={{ margin: '0.25rem 0' }}>{r.comment}</p>
         </li>
       ))}
     </ul>

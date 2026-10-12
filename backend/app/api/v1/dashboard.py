@@ -25,9 +25,10 @@ from app.schemas.dashboard import (
     PersonaFeedbackEntry,
     SentimentBreakdown,
     SimulationAnalyticsResponse,
+    SimulationInsightsOut,
     VariantAnalytics,
 )
-from app.services import report_service
+from app.services import insights_service, report_service
 from app.services.optimization_service import engagement_proxy
 
 router = APIRouter(prefix="/simulations", tags=["dashboard"])
@@ -157,6 +158,7 @@ def get_simulation_analytics(
             "max_iterations": simulation.max_iterations,
         },
         variants=variants_out,
+        insights=SimulationInsightsOut.model_validate(insights_service.build_insights(db, simulation_id).to_dict()),
     )
 
 

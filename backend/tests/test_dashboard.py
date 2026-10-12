@@ -78,7 +78,7 @@ def test_report_csv_and_pdf_both_download(client, db_session):
     csv_resp = client.get(f"/api/v1/simulations/{simulation.id}/report?format=csv", headers=headers)
     assert csv_resp.status_code == 200
     assert csv_resp.headers["content-type"].startswith("text/csv")
-    assert "DryRunAI Simulation Report" in csv_resp.text
+    assert "DryRunAI Launch Readiness Report" in csv_resp.text
 
     pdf_resp = client.get(f"/api/v1/simulations/{simulation.id}/report?format=pdf", headers=headers)
     assert pdf_resp.status_code == 200
