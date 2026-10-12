@@ -22,6 +22,7 @@ from pathlib import Path
 import pytest
 import torch
 import torch.nn as nn
+from PIL import Image
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import Session
 
@@ -101,6 +102,23 @@ def isolated_storage_root(tmp_path, monkeypatch):
     an upload would leave real files under backend/storage/ with nothing to
     clean them up. Autouse so no test has to remember to ask for it."""
     monkeypatch.setattr(settings, "STORAGE_ROOT", str(tmp_path))
+
+
+@pytest.fixture(autouse=True)
+def default_pipeline_settings(monkeypatch):
+    """Tests must not inherit a developer's backend/.env pipeline switches or
+    keys. Without this, switching .env to the hybrid pipeline made the suite
+    call the real Cloudflare API (spending free-tier quota) and broke tests
+    that assume the defaults. Fixtures that need a feature on (e.g.
+    fake_image_provider) turn it on explicitly after this runs."""
+    for name, value in {
+        "GENERATOR_BACKEND": "gan", "IMAGE_PROVIDER": None, "IMAGE_API_KEY": None, "IMAGE_MODEL": None,
+        "CLOUDFLARE_ACCOUNT_ID": None, "DIFFUSION_INIT": "seed", "DIFFUSION_OUTPUT_SIZE": 1024,
+        "DIFFUSION_STRENGTH": 0.55, "GAN_OVERSAMPLE": 3, "MAX_API_IMAGES_PER_SIMULATION": 24,
+        "SR_ENABLED": False, "SR_UPSCALE_SEED": True, "SR_TARGET_SIZE": 1024,
+        "LLM_VISION": False, "REVIEW_GROUNDING_ENABLED": False, "OLLAMA_API_KEY": None, "ANTHROPIC_API_KEY": None,
+    }.items():
+        monkeypatch.setattr(settings, name, value)
 
 
 @pytest.fixture()
@@ -236,9 +254,11 @@ class FakeLLMProvider:
 
     def __init__(self):
         self.call_count = 0
+        self.calls: list[dict] = []
 
-    def complete(self, prompt: str) -> str:
+    def complete(self, prompt: str, images=None) -> str:
         self.call_count += 1
+        self.calls.append({"prompt": prompt, "images": images})
         if self.call_count % 3 == 0:
             return '{"reaction_text": "Not for me, feels overpriced.", "purchase_likelihood": 0.1}'
         return '{"reaction_text": "I really like this, would consider buying.", "purchase_likelihood": 0.8}'
@@ -248,6 +268,36 @@ class FakeLLMProvider:
 def fake_llm_provider(monkeypatch):
     fake = FakeLLMProvider()
     monkeypatch.setattr("app.services.persona_service.get_llm_provider", lambda: fake)
+    return fake
+
+
+class FakeImageProvider:
+    """Stand-in for a hosted diffusion API (app/ml/diffusion/provider.py's
+    Protocol). Returns a solid image so tests can tell a rendered variant from
+    a GAN concept, records every call, and fails on chosen call numbers to
+    exercise per-variant failure isolation."""
+
+    supports_reference_image = True
+    RENDER_COLOUR = (10, 200, 10)
+
+    def __init__(self):
+        self.calls: list[dict] = []
+        self.fail_on_calls: set[int] = set()
+
+    def render(self, init_image, prompt, strength, seed, reference_image=None):
+        self.calls.append({"init_image": init_image, "prompt": prompt, "strength": strength,
+                           "seed": seed, "reference_image": reference_image})
+        if len(self.calls) in self.fail_on_calls:
+            from app.ml.diffusion.provider import ImageProviderError
+            raise ImageProviderError("simulated API failure")
+        return Image.new("RGB", init_image.size, self.RENDER_COLOUR)
+
+
+@pytest.fixture()
+def fake_image_provider(monkeypatch):
+    fake = FakeImageProvider()
+    monkeypatch.setattr(settings, "GENERATOR_BACKEND", "hybrid")
+    monkeypatch.setattr("app.services.gan_service.get_image_provider", lambda: fake)
     return fake
 
 

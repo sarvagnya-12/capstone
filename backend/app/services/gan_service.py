@@ -4,10 +4,15 @@ from typing import Optional
 import numpy as np
 import torch
 from PIL import Image
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
+from app.ml.diffusion.hybrid import HYBRID_METHOD, generate_hybrid_variants
+from app.ml.diffusion.provider import get_image_provider
 from app.ml.gan.evaluation import compute_fid
-from app.ml.gan.inference import generate_variants
+from app.ml.gan.inference import VariantResult, generate_variants
+from app.ml.sr.upscale import upscale
 from app.models.product import Product
 from app.models.product_variant import ProductVariant
 from app.models.simulation import Simulation
@@ -36,6 +41,36 @@ def _load_image_tensor(relative_path: str) -> torch.Tensor:
     return torch.from_numpy(array).permute(2, 0, 1)
 
 
+def _generate_hybrid(
+    db: Session, simulation: Simulation, product: Product, n: int, attribute_hints: Optional[dict]
+) -> list[VariantResult]:
+    """GAN concepts refined by the hosted diffusion API (app/ml/diffusion/hybrid.py).
+    The API budget is per simulation, across all optimisation rounds."""
+    provider = get_image_provider()  # raises ImageConfigurationError if unconfigured -- fail loudly, not silently GAN-only
+    renders_used = db.scalar(
+        select(func.count()).select_from(ProductVariant).where(
+            ProductVariant.simulation_id == simulation.id,
+            ProductVariant.generation_method == HYBRID_METHOD,
+        )
+    ) or 0
+    image_path = product.preprocessed_image_path or product.original_image_path
+    with Image.open(get_path(image_path)) as img:
+        product_image = img.convert("RGB").resize(TARGET_SIZE)
+    return generate_hybrid_variants(
+        product_id=str(product.id),
+        product_image=product_image,
+        name=product.name,
+        category=product.category,
+        description=product.description,
+        brand=product.brand,
+        n=n,
+        provider=provider,
+        api_budget=max(settings.MAX_API_IMAGES_PER_SIMULATION - renders_used, 0),
+        attribute_hints=attribute_hints,
+        seed_transform=upscale if settings.SR_ENABLED and settings.SR_UPSCALE_SEED else None,
+    )
+
+
 def generate_variants_for_simulation(
     db: Session, simulation_id: uuid.UUID, n: int, attribute_hints: Optional[dict] = None
 ) -> list[ProductVariant]:
@@ -47,7 +82,16 @@ def generate_variants_for_simulation(
     if product is None:
         raise ProductNotFoundError(simulation.product_id)
 
-    results = generate_variants(str(product.id), n, attribute_hints=attribute_hints)
+    if settings.GENERATOR_BACKEND == "hybrid":
+        results = _generate_hybrid(db, simulation, product, n, attribute_hints)
+    else:
+        results = generate_variants(str(product.id), n, attribute_hints=attribute_hints)
+
+    if settings.SR_ENABLED:
+        for result in results:
+            if max(result.image.size) < settings.SR_TARGET_SIZE:
+                result.image = upscale(result.image)
+                result.attributes["upscaled"] = "esrgan_2x"
 
     variant_rows = []
     fake_tensors = []
@@ -58,6 +102,12 @@ def generate_variants_for_simulation(
             subfolder=f"products/{product.id}/variants",
             filename=f"{variant_id}.jpg",
         )
+        if result.seed_image is not None:
+            result.attributes["seed_image_path"] = save_pil_image(
+                result.seed_image,
+                subfolder=f"products/{product.id}/variants",
+                filename=f"{variant_id}_gan_seed.jpg",
+            )
         variant = ProductVariant(
             id=variant_id,
             product_id=product.id,

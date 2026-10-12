@@ -22,6 +22,11 @@ Output:
 
 Usage:
     python _ingestion_tools/fetch_amazon_training_images.py --count 25000
+
+    # Super-resolution (ESRGAN) training set: real 512px originals, so the
+    # upscaler learns 256->512 from genuine detail rather than from upscaled blur.
+    python _ingestion_tools/fetch_amazon_training_images.py --count 20000 --size 512 \
+        --out-dir _ingestion_tools/sr_training_images_512
 """
 
 from __future__ import annotations
@@ -74,11 +79,12 @@ def candidate_urls(limit: int) -> list[tuple[str, str]]:
     return out
 
 
-def fetch_one(asin: str, url: str, session: requests.Session) -> str | None:
+def fetch_one(asin: str, url: str, session: requests.Session, out_dir: Path = OUT_DIR,
+              target_size: int = TARGET_SIZE) -> str | None:
     # Already have it: growing the corpus re-walks the metadata from the top,
     # so without this an expansion run re-downloads every image it already has
     # before reaching new ones.
-    if (OUT_DIR / f"{asin}.jpg").exists():
+    if (out_dir / f"{asin}.jpg").exists():
         return asin
 
     try:
@@ -89,19 +95,21 @@ def fetch_one(asin: str, url: str, session: requests.Session) -> str | None:
         return None
 
     width, height = image.size
-    if max(width, height) < MIN_SOURCE_LONG_EDGE:
+    # The long edge must reach the target size, or it would be scaled UP and
+    # reintroduce the blur this script exists to avoid.
+    if max(width, height) < max(MIN_SOURCE_LONG_EDGE, target_size):
         return None
     if max(width, height) / min(width, height) > MAX_ASPECT_RATIO:
         return None
 
-    # Scale the long edge to 512 preserving aspect ratio, then paste onto a
-    # white 512x512 canvas. No stretching, no cropped-off toes, and the padding
-    # matches the photos' own white background.
-    scale = TARGET_SIZE / max(width, height)
+    # Scale the long edge to the target preserving aspect ratio, then paste
+    # onto a white square canvas. No stretching, no cropped-off toes, and the
+    # padding matches the photos' own white background.
+    scale = target_size / max(width, height)
     image = image.resize((max(1, round(width * scale)), max(1, round(height * scale))), Image.LANCZOS)
-    canvas = Image.new("RGB", (TARGET_SIZE, TARGET_SIZE), (255, 255, 255))
-    canvas.paste(image, ((TARGET_SIZE - image.width) // 2, (TARGET_SIZE - image.height) // 2))
-    canvas.save(OUT_DIR / f"{asin}.jpg", quality=95)
+    canvas = Image.new("RGB", (target_size, target_size), (255, 255, 255))
+    canvas.paste(image, ((target_size - image.width) // 2, (target_size - image.height) // 2))
+    canvas.save(out_dir / f"{asin}.jpg", quality=95)
     return asin
 
 
@@ -109,11 +117,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--count", type=int, default=25000, help="How many images to end up with")
     parser.add_argument("--workers", type=int, default=16, help="Concurrent downloads")
+    parser.add_argument("--size", type=int, default=TARGET_SIZE, help="Output square size in px")
+    parser.add_argument("--out-dir", type=Path, default=OUT_DIR, help="Output folder")
     args = parser.parse_args()
 
     if not META.exists():
         raise SystemExit(f"Amazon metadata not found at {META}")
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    out_dir = args.out_dir.resolve()
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     # Over-fetch: some URLs 404, some images fail the aspect/size filters.
     candidates = candidate_urls(int(args.count * 1.25))
@@ -124,7 +135,7 @@ def main() -> int:
 
     saved = failed = 0
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = {pool.submit(fetch_one, asin, url, session): asin for asin, url in candidates}
+        futures = {pool.submit(fetch_one, asin, url, session, out_dir, args.size): asin for asin, url in candidates}
         for future in as_completed(futures):
             if future.result():
                 saved += 1
@@ -139,7 +150,7 @@ def main() -> int:
             future.cancel()
 
     print(f"\nsaved {saved} images ({failed} skipped: failed download or filtered)")
-    print(f"-> {OUT_DIR}")
+    print(f"-> {out_dir}")
     return 0
 
 

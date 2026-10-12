@@ -44,3 +44,8 @@ reportlab==5.0.0
 # app/ml/gan/train_fastgan.py. pytorch-fid backs the package's own FID metric.
 lightweight-gan==1.2.1
 pytorch-fid==0.3.0
+
+# Review grounding for persona prompts (Phase 17 Step 44): sentence embeddings
+# of the real Amazon reviews in ref_reviews. Exact search over a NumPy matrix,
+# so no FAISS -- ~350k reviews is small enough for brute force in ~0.1s.
+sentence-transformers==6.1.0

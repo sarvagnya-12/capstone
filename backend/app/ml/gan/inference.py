@@ -77,9 +77,14 @@ def _apply_hue_shift(img_tensor: torch.Tensor, hue_shift_degrees: float) -> Imag
 class VariantResult:
     image: Image.Image
     attributes: dict
+    # Hybrid backend only: the GAN concept the final image was rendered from,
+    # saved alongside it so the two can be compared.
+    seed_image: Optional[Image.Image] = None
 
 
-def generate_variants(product_id: str, n: int, attribute_hints: Optional[dict] = None) -> list[VariantResult]:
+def generate_variants(
+    product_id: str, n: int, attribute_hints: Optional[dict] = None, apply_hue_shift: bool = True
+) -> list[VariantResult]:
     """Produces n variant images for a product: each is a distinct nearby
     latent-space perturbation (layout/texture proxy) of a shared anchor, plus
     a hue-shift (color) spread across the batch.
@@ -95,6 +100,11 @@ def generate_variants(product_id: str, n: int, attribute_hints: Optional[dict] =
         typically narrower to converge the search around a known-good point.
       - "hue_shift_center_degrees": float -- center the per-variant hue
         spread here instead of sweeping the full 0-360 range.
+
+    apply_hue_shift=False (hybrid backend): the hue is still chosen and
+    recorded in `color_hue_shift_degrees`, but not applied to the pixels --
+    the diffusion stage renders that colour for real instead of rotating the
+    whole bitmap, background included.
     """
     hints = attribute_hints or {}
     generator = _get_generator()
@@ -118,7 +128,7 @@ def generate_variants(product_id: str, n: int, attribute_hints: Optional[dict] =
             hue_shift = (hue_center + (i - n / 2) * (30 / max(n, 1))) % 360
 
         img_tensor = generate_image_from_latent(generator, z_variant)
-        image = _apply_hue_shift(img_tensor, hue_shift)
+        image = _apply_hue_shift(img_tensor, hue_shift if apply_hue_shift else 0.0)
 
         variants.append(
             VariantResult(

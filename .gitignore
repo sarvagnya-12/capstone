@@ -69,6 +69,7 @@ backend/storage/
 # Moving this corpus to another machine is a manual copy -- see
 # TRAINING_TRANSFER.md.
 **/_ingestion_tools/gan_training_images/
+**/_ingestion_tools/sr_training_images_512/
 **/_ingestion_tools/*.log
 **/_ingestion_tools/__pycache__/
 
