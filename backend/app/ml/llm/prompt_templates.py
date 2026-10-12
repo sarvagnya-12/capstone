@@ -96,13 +96,41 @@ def describe_variant_for_persona(variant_attributes: dict) -> str:
     return "; ".join(parts)
 
 
+PRODUCT_DESCRIPTION_MAX_CHARS = 500
+REFERENCE_REVIEW_MAX_CHARS = 300
+
+
+def describe_product(name: Optional[str], brand: Optional[str], category: Optional[str],
+                     description: Optional[str]) -> Optional[str]:
+    """The product itself, as a shopper would see it on a listing. Without
+    this, personas were told only "a green-toned colourway, design variation
+    2" and had to guess what kind of product they were even looking at."""
+    title = " ".join(part for part in (brand, name) if part)
+    if not title and not category and not description:
+        return None
+    text = title or "Unnamed product"
+    if category:
+        text += f" ({category})"
+    if description:
+        text += f" -- {description.strip()[:PRODUCT_DESCRIPTION_MAX_CHARS]}"
+    return text
+
+
 def build_persona_reaction_prompt(
     persona_prompt_template: str,
     variant_attributes: dict,
     pricing_strategy: dict,
     target_demographic: dict,
     promotional_messaging: Optional[str],
+    product_description: Optional[str] = None,
+    has_image: bool = False,
+    reference_reviews: Optional[list[dict]] = None,
 ) -> str:
+    """reference_reviews: real customer reviews of similar products, each
+    {"rating": float, "text": str} (app/ml/retrieval). Shown as reference
+    material, explicitly NOT as the persona's own words or memories, so the
+    persona borrows what real shoppers notice (fit, sizing, comfort, build)
+    without parroting a stranger's review."""
     scenario_lines = [
         f"- Pricing strategy: {json.dumps(pricing_strategy)}",
         f"- Target demographic (as configured for this simulation): {json.dumps(target_demographic)}",
@@ -110,17 +138,42 @@ def build_persona_reaction_prompt(
     if promotional_messaging:
         scenario_lines.append(f"- Promotional messaging: {promotional_messaging}")
 
-    return (
-        f"{persona_prompt_template}\n\n"
+    parts = [
+        persona_prompt_template,
         "You are reacting, in character as this persona, to a product design variant "
-        "being considered for launch.\n"
-        f"The design variant: {describe_variant_for_persona(variant_attributes)}\n"
-        "Launch scenario:\n" + "\n".join(scenario_lines) + "\n\n"
+        "being considered for launch.",
+    ]
+    if product_description:
+        parts.append(f"The product: {product_description}")
+    parts.append(f"This design variant: {describe_variant_for_persona(variant_attributes)}")
+    if has_image:
+        parts.append(
+            "A photo of this exact design variant is attached. Look at it closely and react to "
+            "what you actually see -- shape, colours, materials, details, overall look."
+        )
+    parts.append("Launch scenario:\n" + "\n".join(scenario_lines))
+
+    if reference_reviews:
+        lines = [
+            f"- ({r['rating']:.0f}/5) {str(r['text']).strip()[:REFERENCE_REVIEW_MAX_CHARS]}"
+            for r in reference_reviews
+        ]
+        parts.append(
+            "For reference, here is what real buyers of similar products said in reviews. Use them "
+            "only to understand what real shoppers notice and care about; they are not your own "
+            "experience. They are about other products and brands -- never name those brands or "
+            "treat their faults as this product's. Do not copy or quote them, and form your own "
+            "opinion of this variant:\n"
+            + "\n".join(lines)
+        )
+
+    parts.append(
         "Respond with ONLY a JSON object (no other text, no markdown code fences) "
         "with exactly these two fields:\n"
         '{"reaction_text": "<2-3 sentences of qualitative reaction, in character as this persona>", '
         '"purchase_likelihood": <float between 0.0 and 1.0>}'
     )
+    return "\n\n".join(parts)
 
 
 class PersonaReactionParseError(Exception):
