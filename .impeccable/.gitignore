@@ -1,0 +1,9 @@
+# Transient Impeccable tooling state. The durable design artifacts --
+# design.json (DESIGN.md's sidecar) and surfaces/ (direction contracts) --
+# are committed; everything below is per-machine or per-session.
+hook.cache.json
+hook.pending.json
+config.local.json
+questions/
+review/
+live/

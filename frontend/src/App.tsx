@@ -1,8 +1,10 @@
-import { Link, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './state/AuthContext'
+import { RunIdentityProvider, useRunIdentity } from './state/RunIdentityContext'
 
 function Nav() {
   const { isAuthenticated, isAdmin, user, logout } = useAuth()
+  const { identity } = useRunIdentity()
   const navigate = useNavigate()
 
   function handleLogout() {
@@ -12,17 +14,22 @@ function Nav() {
 
   return (
     <header className="app-header">
-      <Link to="/" className="brand">
-        DryRunAI
-      </Link>
+      <div className="app-nav">
+        <Link to="/" className="brand">
+          DryRunAI
+        </Link>
+        {identity && <span className="code run-id">{identity}</span>}
+      </div>
       {isAuthenticated && (
         <nav className="app-nav">
-          <Link to="/products/new">Upload Product</Link>
-          <Link to="/simulations/new">New Simulation</Link>
-          <Link to="/dashboard">Dashboard</Link>
-          {isAdmin && <Link to="/admin">Admin</Link>}
+          <NavLink to="/products/new">Products</NavLink>
+          <NavLink to="/simulations/new">New simulation</NavLink>
+          <NavLink to="/dashboard" end>
+            Simulations
+          </NavLink>
+          {isAdmin && <NavLink to="/admin">Admin</NavLink>}
           <span className="app-nav-user">{user?.email}</span>
-          <button type="button" onClick={handleLogout}>
+          <button type="button" className="secondary" onClick={handleLogout}>
             Log out
           </button>
         </nav>
@@ -34,12 +41,12 @@ function Nav() {
 function App() {
   return (
     <AuthProvider>
-      <div>
+      <RunIdentityProvider>
         <Nav />
         <main className="app-main">
           <Outlet />
         </main>
-      </div>
+      </RunIdentityProvider>
     </AuthProvider>
   )
 }

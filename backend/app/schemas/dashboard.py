@@ -55,6 +55,7 @@ class OptionInsightOut(BaseModel):
     variant_id: uuid.UUID
     label: str
     colourway: str
+    colourway_hex: str | None = None
     rank: int
     is_recommended: bool
     purchase_intent_pct: int

@@ -82,6 +82,7 @@ class OptionInsight:
     variant_id: str
     label: str  # "Option A"
     colourway: str
+    colourway_hex: Optional[str]  # measured from the render; None when unreadable
     rank: int
     is_recommended: bool
     purchase_intent_pct: int
@@ -135,22 +136,25 @@ _HUE_BANDS = [(15, "red"), (40, "orange"), (65, "yellow"), (160, "green"), (195,
               (320, "purple"), (340, "pink"), (360, "red")]
 
 
-def dominant_colour_name(image: Image.Image) -> Optional[str]:
-    """Plain colour name of the product in a photo on a white background,
-    measured from the pixels. Needed because the colour the pipeline ASKED
-    for is not always what the image model drew (a "original colourway"
-    request for a black sneaker came back light grey)."""
+def _measure_dominant(image: Image.Image) -> Optional[tuple[str, str]]:
+    """The product's colour in a photo on a white background, measured from
+    the pixels: a plain name a person would say, plus the median foreground
+    colour as hex so the UI can paint a swatch of what was actually drawn
+    rather than guessing a colour from the name."""
     hsv = np.asarray(image.convert("RGB").resize((96, 96)).convert("HSV"), dtype=np.float32) / 255.0
     rgb = np.asarray(image.convert("RGB").resize((96, 96)), dtype=np.float32) / 255.0
     foreground = rgb.min(axis=2) < 0.9  # drop the near-white background
     if foreground.sum() < 50:
         return None
+    swatch = "#%02x%02x%02x" % tuple(
+        int(round(float(np.median(rgb[..., i][foreground])) * 255)) for i in range(3)
+    )
     h, s, v = (hsv[..., i][foreground] for i in range(3))
     sat, val = float(np.median(s)), float(np.median(v))
     if val < 0.22:
-        return "black"
+        return "black", swatch
     if sat < 0.18:
-        return "light grey" if val > 0.7 else "grey" if val > 0.4 else "dark grey"
+        return ("light grey" if val > 0.7 else "grey" if val > 0.4 else "dark grey"), swatch
     coloured = s > 0.18
     hue_deg = float(np.median(h[coloured])) * 360 if coloured.any() else 0.0
     name = next(n for limit, n in _HUE_BANDS if hue_deg <= limit)
@@ -162,22 +166,34 @@ def dominant_colour_name(image: Image.Image) -> Optional[str]:
         name = f"light {name}"
     elif val < 0.5:  # navy renders measured 0.31-0.37, mid-blue 0.79+
         name = f"dark {name}"
-    return name
+    return name, swatch
 
 
-def _colourway(variant: ProductVariant) -> str:
-    """Colour as it appears in the generated image; falls back to the colour
-    that was requested if the image can't be read."""
-    name = None
+def dominant_colour_name(image: Image.Image) -> Optional[str]:
+    """Plain colour name of the product in a photo on a white background,
+    measured from the pixels. Needed because the colour the pipeline ASKED
+    for is not always what the image model drew (a "original colourway"
+    request for a black sneaker came back light grey)."""
+    measured = _measure_dominant(image)
+    return measured[0] if measured else None
+
+
+def _colourway(variant: ProductVariant) -> tuple[str, Optional[str]]:
+    """Colour as it appears in the generated image, as a name plus the
+    measured swatch hex; falls back to the colour that was requested if the
+    image can't be read, in which case there is no measured swatch and the
+    UI must say so rather than invent one."""
+    measured = None
     try:
         with Image.open(get_path(variant.image_path)) as img:
-            name = dominant_colour_name(img)
+            measured = _measure_dominant(img)
     except OSError:
         pass
-    if name:
-        return f"{name[:1].upper()}{name[1:]} colourway"
+    if measured:
+        name, swatch = measured
+        return f"{name[:1].upper()}{name[1:]} colourway", swatch
     phrase = re.sub(r"^(a|an|the)\s+", "", colour_phrase((variant.attributes or {}).get("color_hue_shift_degrees")))
-    return phrase[:1].upper() + phrase[1:]
+    return phrase[:1].upper() + phrase[1:], None
 
 
 def _price_text(pricing_strategy: dict) -> str:
@@ -275,8 +291,9 @@ def _option_insight(label: str, rank: int, variant: ProductVariant, is_recommend
     best = reactions[0] if reactions and reactions[0].likelihood_pct >= 50 else None
     worst = reactions[-1] if reactions and reactions[-1].likelihood_pct < 50 else None
 
+    colourway, colourway_hex = _colourway(variant)
     return OptionInsight(
-        variant_id=str(variant.id), label=label, colourway=_colourway(variant), rank=rank,
+        variant_id=str(variant.id), label=label, colourway=colourway, colourway_hex=colourway_hex, rank=rank,
         is_recommended=is_recommended, purchase_intent_pct=pct, interest_level=_interest_level(pct),
         likely_buyers=sum(1 for r in reactions if r.buying_intent == "Likely to buy"),
         undecided=sum(1 for r in reactions if r.buying_intent == "Undecided"),

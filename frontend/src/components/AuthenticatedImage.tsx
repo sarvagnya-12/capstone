@@ -41,14 +41,14 @@ export default function AuthenticatedImage({
 
   if (failed) {
     return (
-      <div className={className} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span className="muted">Image unavailable</span>
+      <div className={`${className ?? ''} thumb-placeholder`.trim()} role="img" aria-label={`${alt} — image unavailable`}>
+        <span className="legend">image unavailable</span>
       </div>
     )
   }
 
   if (!objectUrl) {
-    return <div className={className} aria-busy="true" />
+    return <div className={`${className ?? ''} thumb-placeholder`.trim()} aria-busy="true" aria-label="Loading image" />
   }
 
   return <img src={objectUrl} alt={alt} className={className} />

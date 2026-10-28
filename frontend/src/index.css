@@ -1,348 +1,1193 @@
-:root {
-  color-scheme: light dark;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --color-bg: #f7f7f9;
-  --color-surface: #ffffff;
-  --color-border: #dcdce0;
-  --color-text: #1a1a1f;
-  --color-muted: #6b6b76;
-  --color-primary: #3454d1;
-  --color-primary-text: #ffffff;
-  --color-danger: #c1352d;
-  --color-success: #1f7a4d;
-  --color-warning: #b7791f;
-  --color-neutral: #9a9aa5;
+/* DryRunAI — the colourway spec sheet.
+ *
+ * The world is the sheet a footwear developer marks up: cool bond stock,
+ * hairline rules, tracked condensed codes, and quantities in tabular
+ * figures. Chroma on this screen belongs to the data: the only saturated
+ * colour besides the three marking inks is a variant's own measured
+ * colourway. Light is canonical — the scene is a lit desk at 10am, a sheet
+ * read against the chips in hand — so there is no dark inversion to drift.
+ */
+
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400 700;
+  font-stretch: 62% 125%;
+  font-display: swap;
+  src: url('/fonts/archivo-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #16161a;
-    --color-surface: #1f1f24;
-    --color-border: #33333a;
-    --color-text: #f0f0f2;
-    --color-muted: #a0a0ab;
-    --color-primary: #6c85e8;
-    --color-primary-text: #0b0b0d;
-  }
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400 700;
+  font-stretch: 62% 125%;
+  font-display: swap;
+  src: url('/fonts/archivo-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  color-scheme: light;
+
+  --font-sheet: 'Archivo', 'Segoe UI', system-ui, sans-serif;
+
+  /* The stock, the ink, and the ruling */
+  --bond: #f1f3f1;
+  /* Off-white rather than paper-white: a sheet of real stock laid on the
+   * bond, not a lit panel. Still a clear tonal step above the ground. */
+  --sheet: #fafbf8;
+  --rule: #c9cfcb;
+  --rule-strong: #9ba39f;
+  --ink: #15191a;
+  --ink-2: #4a5250;
+  --field: #e8ebe8;
+
+  /* The header band owns a real region of the screen, not an accent */
+  --slate: #2c3836;
+  --slate-2: #3b4a47;
+  --slate-ink: #eef1ee;
+  --slate-ink-2: #a9b6b2;
+
+  /* Three marking inks. Full strength, only where they carry meaning. */
+  --mark-red: #c0211c;
+  --mark-green: #1a6b41;
+  --mark-amber: #8a5f17;
+
+  /* Hatch stands in for anything unmeasured or in conflict, so the meaning
+   * survives greyscale, a projector, and colour blindness. */
+  --hatch: repeating-linear-gradient(45deg, var(--rule-strong) 0 1.5px, transparent 1.5px 5px);
+
+  --measure: 68ch;
+  --sheet-width: 1160px;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
-  background: var(--color-bg);
-  color: var(--color-text);
+  /* The bond stock is printed: a quiet scatter of shoe doodles tiled
+   * across the ground the sheets sit on. It is tonal, not chromatic --
+   * one step off the bond itself -- so it reads as the texture of the
+   * paper and never competes with a measured colour or a marking ink.
+   * Every sheet is opaque, so this only ever shows in the margins. */
+  background-color: var(--bond);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cdefs%3E%3Cg id='a'%3E%3Cpath d='M2 18C2 12 5 8 10 6.6 12.6 5.9 14.6 7.4 16.4 9.6 18.6 12.2 22.6 13.4 27 14.2 29 14.6 30 15.6 30 17.2V18'/%3E%3Cpath d='M2 18h28.4'/%3E%3Cpath d='M2.4 20.6h27.8'/%3E%3Cpath d='M10 6.6 8 12.4'/%3E%3Cpath d='m11.2 9.2 4.4 2.4'/%3E%3Cpath d='m9.8 12.6 4.6 2.2'/%3E%3C/g%3E%3Cg id='b'%3E%3Cpath d='M7 1c3 0 5.2 4 5.2 9.4 0 6-2.2 10.6-5.2 10.6S1.8 16.4 1.8 10.4C1.8 5 4 1 7 1z'/%3E%3Cpath d='M3.2 6.6h7.6'/%3E%3Cpath d='M2.6 10.8h8.8'/%3E%3Cpath d='M3.4 15h7.2'/%3E%3C/g%3E%3Cg id='c'%3E%3Cpath d='M3.4 4c0-1.8 1.4-3 3.4-3s3.4 1.2 3.4 3v9.4c0 1.8 2.6 3 5.4 4.4 1.8.9 2.8 1.8 2.8 3V22c0 .7-.6 1.2-1.4 1.2H4.6c-1 0-1.6-.6-1.6-1.6z'/%3E%3Cpath d='M3.4 5.2h6.8'/%3E%3Cpath d='m10.2 15.6 5.8 2.8'/%3E%3C/g%3E%3Cg id='d'%3E%3Cpath d='M9 7.6C4.6 2.6 2.8 10.4 7.6 10.8c3.6.3 4-4 1.4-5.4'/%3E%3Cpath d='M9 7.6c4.4-5 6.2 2.8 1.4 3.2-3.6.3-4-4-1.4-5.4'/%3E%3Cpath d='m7.8 11.4-2 6'/%3E%3Cpath d='m10.2 11.4 2.2 5.8'/%3E%3C/g%3E%3Cg id='e'%3E%3Cpath d='M2 6h20.4v9H2z'/%3E%3Cpath d='m2 6 2.8-3h20.4L22.4 6'/%3E%3Cpath d='M22.4 6 25.2 3v9l-2.8 3'/%3E%3Cpath d='M9 9.6h6.6'/%3E%3C/g%3E%3Cg id='f'%3E%3Cpath d='M6.8 1c2.8 0 4.8 3.6 4.8 9s-2 9-4.8 9S2 15.4 2 10 4 1 6.8 1z'/%3E%3Cpath d='M3.4 5.6 6.8 8.8'/%3E%3Cpath d='M10.2 5.6 6.8 8.8'/%3E%3Cpath d='M6.8 8.8v2.4'/%3E%3C/g%3E%3Cg id='g'%3E%3Cpath d='M2 14.4c0-5 3.2-9 8.4-10.8 1.8-.6 2.8 0 3.6 1.4l5 8.2c.8 1.4 0 2.6-1.6 2.6H3.8c-1.2 0-1.8-.5-1.8-1.4z'/%3E%3Cpath d='M17.4 15.8v3.4h2.4'/%3E%3Cpath d='M2 15.8h15.4'/%3E%3C/g%3E%3Cg id='h'%3E%3Cpath d='M6 6c3 0 4.6 3 4.6 7s-1.6 6.6-4.6 6.6S1.4 17 1.4 13 3 6 6 6z'/%3E%3Ccircle cx='2.8' cy='3.6' r='1.3'/%3E%3Ccircle cx='5.4' cy='2.2' r='1.1'/%3E%3Ccircle cx='7.6' cy='2.8' r='1'/%3E%3Ccircle cx='9.4' cy='4.2' r='.9'/%3E%3Ccircle cx='10.8' cy='6' r='.8'/%3E%3C/g%3E%3Cg id='i'%3E%3Cpath d='M2 20c0-6 2.5-10 7-12V4c0-1.4 1-2 2.4-1.6l2.6.8c1 .3 1.4 1 1.4 2v5.2c2.2 2.2 6.2 3.4 10.6 4.2 2 .4 3 1.4 3 3V20'/%3E%3Cpath d='M2 20h27.4'/%3E%3Cpath d='M2.4 22.6h27'/%3E%3Cpath d='m11 7 3.6 2'/%3E%3Cpath d='m10.4 10.4 4.6 2.2'/%3E%3C/g%3E%3Cg id='j'%3E%3Cpath d='M3 6c0-3 3-4.6 6-4.6s6 1.6 6 4.6v1'/%3E%3Cpath d='M2 7c0 4 2 8 7 8s7-4 7-8z'/%3E%3Cpath d='M9 1.4V7'/%3E%3C/g%3E%3C/defs%3E%3Cg fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg stroke='%23e3e7e2' stroke-width='1.5'%3E%3Cuse href='%23a' transform='translate(206.3 75.0) rotate(7) scale(0.86)'/%3E%3Cuse href='%23a' transform='translate(203.2 199.8) rotate(-3) scale(0.84)'/%3E%3Cuse href='%23a' transform='translate(127.2 97.0) rotate(14) scale(0.79)'/%3E%3Cuse href='%23i' transform='translate(135.6 211.4) rotate(-10) scale(0.79)'/%3E%3Cuse href='%23i' transform='translate(151.2 39.4) rotate(-13) scale(0.77)'/%3E%3Cuse href='%23a' transform='translate(36.2 95.3) rotate(12) scale(0.74)'/%3E%3Cuse href='%23e' transform='translate(54.7 44.4) rotate(-3) scale(0.87)'/%3E%3Cuse href='%23a' transform='translate(19.1 128.6) rotate(-15) scale(0.7)'/%3E%3Cuse href='%23e' transform='translate(85.1 46.8) rotate(-16) scale(0.83)'/%3E%3Cuse href='%23e' transform='translate(97.0 98.5) rotate(-15) scale(0.8)'/%3E%3Cuse href='%23a' transform='translate(114.5 132.0) rotate(10) scale(0.66)'/%3E%3Cuse href='%23a' transform='translate(154.2 124.4) rotate(14) scale(0.64)'/%3E%3Cuse href='%23i' transform='translate(39.0 207.6) rotate(15) scale(0.66)'/%3E%3Cuse href='%23i' transform='translate(57.5 -3.1) rotate(15) scale(0.64)'/%3E%3Cuse href='%23i' transform='translate(57.5 236.9) rotate(15) scale(0.64)'/%3E%3Cuse href='%23i' transform='translate(-8.5 140.5) rotate(-18) scale(0.61)'/%3E%3Cuse href='%23i' transform='translate(231.5 140.5) rotate(-18) scale(0.61)'/%3E%3Cuse href='%23e' transform='translate(191.3 105.9) rotate(-17) scale(0.69)'/%3E%3Cuse href='%23e' transform='translate(39.7 71.6) rotate(-1) scale(0.67)'/%3E%3Cuse href='%23a' transform='translate(112.2 200.3) rotate(16) scale(0.56)'/%3E%3Cuse href='%23e' transform='translate(46.3 126.8) rotate(16) scale(0.64)'/%3E%3Cuse href='%23e' transform='translate(49.8 21.9) rotate(3) scale(0.63)'/%3E%3Cuse href='%23a' transform='translate(72.6 177.5) rotate(-10) scale(0.5)'/%3E%3Cuse href='%23e' transform='translate(118.1 37.0) rotate(-15) scale(0.58)'/%3E%3Cuse href='%23g' transform='translate(147.4 68.8) rotate(-2) scale(0.62)'/%3E%3Cuse href='%23j' transform='translate(182.7 212.3) rotate(-17) scale(0.68)'/%3E%3Cuse href='%23j' transform='translate(222.4 32.6) rotate(-1) scale(0.68)'/%3E%3Cuse href='%23g' transform='translate(133.2 185.1) rotate(16) scale(0.58)'/%3E%3Cuse href='%23g' transform='translate(174.8 62.2) rotate(-1) scale(0.57)'/%3E%3Cuse href='%23g' transform='translate(153.9 192.7) rotate(-14) scale(0.55)'/%3E%3Cuse href='%23j' transform='translate(74.6 27.7) rotate(12) scale(0.62)'/%3E%3Cuse href='%23g' transform='translate(56.6 187.7) rotate(-11) scale(0.52)'/%3E%3Cuse href='%23j' transform='translate(4.4 20.4) rotate(6) scale(0.57)'/%3E%3Cuse href='%23d' transform='translate(221.5 55.1) rotate(-7) scale(0.55)'/%3E%3Cuse href='%23d' transform='translate(37.1 188.8) rotate(7) scale(0.54)'/%3E%3Cuse href='%23h' transform='translate(98.6 75.5) rotate(17) scale(0.6)'/%3E%3Cuse href='%23f' transform='translate(66.7 104.8) rotate(-15) scale(0.55)'/%3E%3Cuse href='%23f' transform='translate(40.8 38.4) rotate(-20) scale(0.53)'/%3E%3Cuse href='%23h' transform='translate(201.1 175.6) rotate(-2) scale(0.54)'/%3E%3C/g%3E%3Cg stroke='%23d0d6d0' stroke-width='1.25'%3E%3Cuse href='%23a' transform='translate(-1.0 42.4) rotate(2) scale(1.13)'/%3E%3Cuse href='%23a' transform='translate(239.0 42.4) rotate(2) scale(1.13)'/%3E%3Cuse href='%23i' transform='translate(187.8 134.0) rotate(-9) scale(1.12)'/%3E%3Cuse href='%23i' transform='translate(90.6 1.4) rotate(-13) scale(1.09)'/%3E%3Cuse href='%23i' transform='translate(72.8 124.7) rotate(-15) scale(1.05)'/%3E%3Cuse href='%23i' transform='translate(71.6 201.6) rotate(19) scale(1.02)'/%3E%3Cuse href='%23i' transform='translate(142.5 153.8) rotate(3) scale(1.01)'/%3E%3Cuse href='%23e' transform='translate(18.9 -0.7) rotate(-19) scale(1.14)'/%3E%3Cuse href='%23e' transform='translate(18.9 239.3) rotate(-19) scale(1.14)'/%3E%3Cuse href='%23i' transform='translate(-22.9 -6.1) rotate(5) scale(0.93)'/%3E%3Cuse href='%23i' transform='translate(-22.9 233.9) rotate(5) scale(0.93)'/%3E%3Cuse href='%23i' transform='translate(217.1 -6.1) rotate(5) scale(0.93)'/%3E%3Cuse href='%23i' transform='translate(217.1 233.9) rotate(5) scale(0.93)'/%3E%3Cuse href='%23i' transform='translate(102.1 164.4) rotate(-7) scale(0.91)'/%3E%3Cuse href='%23e' transform='translate(133.1 11.2) rotate(6) scale(1.0)'/%3E%3Cuse href='%23e' transform='translate(162.4 85.6) rotate(9) scale(0.95)'/%3E%3Cuse href='%23g' transform='translate(8.0 168.6) rotate(-19) scale(1.15)'/%3E%3Cuse href='%23g' transform='translate(43.3 156.2) rotate(0) scale(1.14)'/%3E%3Cuse href='%23c' transform='translate(-8.7 99.8) rotate(9) scale(1.13)'/%3E%3Cuse href='%23c' transform='translate(231.3 99.8) rotate(9) scale(1.13)'/%3E%3Cuse href='%23g' transform='translate(115.2 58.9) rotate(9) scale(1.07)'/%3E%3Cuse href='%23c' transform='translate(175.8 -8.0) rotate(-12) scale(1.12)'/%3E%3Cuse href='%23c' transform='translate(175.8 232.0) rotate(-12) scale(1.12)'/%3E%3Cuse href='%23g' transform='translate(66.2 74.7) rotate(5) scale(1.06)'/%3E%3Cuse href='%23g' transform='translate(6.6 206.8) rotate(-3) scale(1.05)'/%3E%3Cuse href='%23c' transform='translate(189.5 34.1) rotate(18) scale(1.1)'/%3E%3Cuse href='%23j' transform='translate(173.3 184.3) rotate(-16) scale(1.14)'/%3E%3Cuse href='%23j' transform='translate(217.0 170.6) rotate(-2) scale(1.03)'/%3E%3Cuse href='%23d' transform='translate(16.3 81.6) rotate(-3) scale(0.96)'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-size: 165px 165px;
+  color: var(--ink);
+  font-family: var(--font-sheet);
+  font-size: 1rem;
+  line-height: 1.55;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* --- Browser surfaces: the parts we did not draw still carry the world --- */
+
+::selection {
+  background: var(--slate);
+  color: var(--slate-ink);
+}
+
+:root {
+  accent-color: var(--slate);
+  scrollbar-color: var(--rule-strong) var(--bond);
+  scrollbar-width: thin;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.app-header :focus-visible {
+  outline-color: var(--slate-ink);
 }
 
 a {
-  color: var(--color-primary);
+  color: var(--ink);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
 }
+
+a:hover {
+  text-decoration-color: var(--mark-red);
+}
+
+/* --- Voices --- */
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Section headings are the sheet's legends: tracked condensed caps. */
+h2 {
+  font-size: 0.8125rem;
+  font-stretch: 70%;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-2);
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+h3 {
+  font-size: 1.0625rem;
+  margin: 0 0 0.25rem;
+}
+
+h4 {
+  font-size: 0.8125rem;
+  font-stretch: 70%;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-2);
+  margin: 1.25rem 0 0.375rem;
+}
+
+/* The code voice: part numbers, run identity, option codes. */
+.code {
+  font-stretch: 62%;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 0.75rem;
+}
+
+.legend {
+  font-stretch: 70%;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+}
+
+.quantity {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.prose {
+  max-width: var(--measure);
+}
+
+.muted {
+  color: var(--ink-2);
+}
+
+/* --- Shell --- */
 
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.5rem;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.625rem 1.5rem;
+  background: var(--slate);
+  color: var(--slate-ink);
+  border-bottom: 3px solid var(--ink);
 }
 
 .brand {
+  font-stretch: 70%;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.0625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
   text-decoration: none;
-  color: var(--color-text);
+  color: var(--slate-ink);
+}
+
+.app-header .run-id {
+  color: var(--slate-ink-2);
 }
 
 .app-nav {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.app-nav a {
+  color: var(--slate-ink);
+  font-stretch: 80%;
+  font-size: 0.875rem;
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.app-nav a:hover {
+  border-bottom-color: var(--slate-ink-2);
+}
+
+.app-nav a[aria-current='page'] {
+  border-bottom-color: var(--slate-ink);
 }
 
 .app-nav-user {
-  color: var(--color-muted);
-  font-size: 0.9rem;
+  color: var(--slate-ink-2);
+  font-size: 0.8125rem;
 }
 
 .app-main {
-  max-width: 960px;
+  max-width: var(--sheet-width);
   margin: 0 auto;
   padding: 1.5rem;
 }
 
+.app-main.narrow {
+  max-width: 420px;
+}
+
+/* --- The sheet --- */
+
 .card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 1.25rem;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  padding: 1.25rem 1.375rem;
   margin-bottom: 1rem;
 }
 
-.form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
-}
-
-.form-field label {
-  font-size: 0.9rem;
-  font-weight: 600;
-}
+/* --- Controls: standard web components, printed-mark states --- */
 
 input,
 select,
 textarea {
   font: inherit;
-  padding: 0.5rem 0.65rem;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-bg);
-  color: var(--color-text);
+  font-size: 0.9375rem;
+  padding: 0.4375rem 0.5rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0;
+  background: var(--sheet);
+  color: var(--ink);
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--ink-2);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+  border-color: var(--ink);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink-2);
+}
+
+input[aria-invalid='true'] {
+  border-color: var(--mark-red);
+  border-left-width: 3px;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: var(--field);
+  color: var(--ink-2);
+  cursor: not-allowed;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+  margin-bottom: 1rem;
+}
+
+.form-field label {
+  font-stretch: 70%;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+}
+
+.form-hint {
+  font-size: 0.8125rem;
+  color: var(--ink-2);
 }
 
 button {
   font: inherit;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  border: 1px solid var(--color-primary);
-  background: var(--color-primary);
-  color: var(--color-primary-text);
+  font-stretch: 80%;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.4375rem 0.875rem;
+  border-radius: 0;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--sheet);
   cursor: pointer;
 }
 
+button:hover:not(:disabled) {
+  background: var(--slate);
+  border-color: var(--slate);
+}
+
+button:active:not(:disabled) {
+  background: var(--slate-2);
+}
+
 button:disabled {
-  opacity: 0.6;
+  background: var(--field);
+  border-color: var(--rule-strong);
+  color: var(--ink-2);
   cursor: not-allowed;
 }
 
 button.secondary {
   background: transparent;
-  color: var(--color-primary);
+  color: var(--ink);
+}
+
+button.secondary:hover:not(:disabled) {
+  background: var(--field);
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+button.secondary:disabled {
+  background: transparent;
+  color: var(--ink-2);
+}
+
+button.quiet {
+  background: transparent;
+  border-color: var(--rule-strong);
+  color: var(--ink-2);
+  padding: 0.25rem 0.5rem;
+}
+
+button.quiet:hover:not(:disabled) {
+  background: var(--field);
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* --- Printed marks: status, not decoration --- */
+
+.error-text,
+.success-text {
+  font-size: 0.875rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.375rem;
 }
 
 .error-text {
-  color: var(--color-danger);
-  font-size: 0.9rem;
+  color: var(--mark-red);
 }
 
 .success-text {
-  color: var(--color-success);
-  font-size: 0.9rem;
+  color: var(--mark-green);
 }
 
-.muted {
-  color: var(--color-muted);
+.notice {
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--rule-strong);
+  padding: 0.75rem 0.875rem;
+  background: var(--sheet);
+  font-size: 0.875rem;
 }
+
+.notice.alert {
+  border-top-color: var(--mark-red);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.0625rem 0.375rem;
+  border: 1px solid currentColor;
+  font-stretch: 70%;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.badge.positive {
+  color: var(--mark-green);
+}
+
+.badge.negative {
+  color: var(--mark-red);
+}
+
+.badge.warning {
+  color: var(--mark-amber);
+}
+
+.badge.neutral {
+  color: var(--ink-2);
+}
+
+.badge.recommended {
+  background: var(--mark-green);
+  border-color: var(--mark-green);
+  color: var(--sheet);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.chip {
+  font-size: 0.8125rem;
+  padding: 0.125rem 0.4375rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  color: var(--ink-2);
+}
+
+/* --- Tables: the line listing --- */
 
 table {
   width: 100%;
   border-collapse: collapse;
 }
 
+thead th {
+  font-stretch: 70%;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-2);
+  border-bottom: 1px solid var(--rule-strong);
+}
+
 th,
 td {
   text-align: left;
-  padding: 0.5rem 0.6rem;
-  border-bottom: 1px solid var(--color-border);
-  font-size: 0.9rem;
+  padding: 0.5rem 0.625rem;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.875rem;
+  vertical-align: top;
 }
 
-.badge {
+th:first-child,
+td:first-child {
+  padding-left: 0;
+}
+
+td.num,
+th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+tbody tr:hover td {
+  background: var(--field);
+}
+
+.row-recommended td {
+  background: #1a6b410f;
+}
+
+.row-recommended:hover td {
+  background: #1a6b4119;
+}
+
+.table-note {
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+  margin: 0.625rem 0 0;
+  max-width: var(--measure);
+}
+
+/* --- The finding --- */
+
+.finding {
+  border-top: 3px solid var(--ink);
+}
+
+.finding-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.finding h1 {
+  font-size: clamp(1.625rem, 2.6vw, 2.125rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+  max-width: 24ch;
+  text-wrap: balance;
+}
+
+.finding-line {
+  margin: 0;
+  max-width: var(--measure);
+}
+
+/* --- The signature: the colourway chip row --- */
+
+.chiprow {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chiprow li {
+  flex: 1 1 8.5rem;
+  min-width: 8.5rem;
+  max-width: 13rem;
+}
+
+.swatch-button {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+  width: 100%;
+  text-align: left;
+  padding: 0;
+  gap: 0;
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  color: var(--ink);
+  font: inherit;
+  letter-spacing: normal;
+  font-stretch: 100%;
+}
+
+.swatch-button:hover:not(:disabled) {
+  background: transparent;
+  border-color: var(--ink);
+}
+
+.swatch-button[aria-pressed='true'] {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.swatch {
+  display: block;
+  flex: none;
+  height: 4.5rem;
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+/* No measured colour: say so in texture rather than paint a guess. */
+.swatch.unmeasured {
+  background-color: var(--field);
+  background-image: var(--hatch);
+}
+
+.swatch-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0.5rem 0.625rem 0.625rem;
+  background: var(--sheet);
+}
+
+/* Figures line up across the row even when one colourway name wraps, so
+ * the eye can compare them without re-finding the baseline. */
+.swatch-figure {
+  margin-top: auto;
+}
+
+.swatch-body .code {
+  display: block;
+  color: var(--ink-2);
+}
+
+.swatch-name {
+  display: block;
+  font-size: 0.875rem;
+  margin: 0.125rem 0 0.375rem;
+}
+
+.swatch-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  padding-top: 0.375rem;
+}
+
+.swatch-figure .quantity {
+  font-size: 1.25rem;
+}
+
+/* The option taken forward is stamped at the chip's own edge rather than
+ * given a second badge: the row is read across, so the mark belongs on the
+ * rule between the colour and its figures. */
+.swatch-recommended .swatch {
+  border-bottom: 3px solid var(--mark-green);
+}
+
+/* --- Dimensionally honest bars: length is the real figure --- */
+
+.bar {
+  height: 4px;
+  width: 100%;
+  max-width: 9rem;
+  background: var(--field);
+  border: 1px solid var(--rule);
+  margin-bottom: 0.25rem;
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+}
+
+.segment-bar {
+  display: flex;
+  height: 0.875rem;
+  border: 1px solid var(--rule-strong);
+  background: var(--field);
+}
+
+.segment-bar > span {
+  border-right: 1px solid var(--sheet);
+}
+
+.segment-bar > span:last-child {
+  border-right: 0;
+}
+
+.segment-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin-top: 0.375rem;
+  font-size: 0.8125rem;
+}
+
+.segment-legend i {
   display: inline-block;
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.375rem;
+  border: 1px solid var(--ink-2);
 }
 
-.badge.positive {
-  background: #1f7a4d22;
-  color: var(--color-success);
-}
+/* --- Field blocks: what was tested --- */
 
-.badge.negative {
-  background: #c1352d22;
-  color: var(--color-danger);
-}
-
-.badge.neutral {
-  background: #6b6b7622;
-  color: var(--color-muted);
-}
-
-.badge.recommended {
-  background: var(--color-primary);
-  color: var(--color-primary-text);
-}
-
-.grid {
+.facts {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: max-content 1fr;
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.facts dt {
+  font-stretch: 70%;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-2);
+  padding: 0.5rem 1.5rem 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.facts dd {
+  margin: 0;
+  padding: 0.5rem 0;
+  font-size: 0.9375rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* --- Option detail --- */
+
+.option-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
   gap: 1rem;
+}
+
+.option-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.option-card.recommended {
+  border-top: 3px solid var(--mark-green);
+}
+
+.option-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.option-card p {
+  margin: 0;
+  font-size: 0.9375rem;
 }
 
 .thumb {
   width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
-  border-radius: 6px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  background: var(--field);
+  border: 1px solid var(--rule);
+  display: block;
 }
 
-/* --- Results dashboard (business view) --- */
-
-.badge.warning {
-  background: #b7791f22;
-  color: var(--color-warning);
-}
-
-.verdict-card {
-  border-left: 6px solid var(--color-primary);
-}
-
-.verdict-card h1 {
-  margin: 0.35rem 0 0.5rem;
-  font-size: 1.5rem;
-}
-
-.facts {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 0.4rem 1.25rem;
-  margin: 0;
-}
-
-.facts dt {
-  color: var(--color-muted);
-  font-size: 0.9rem;
-}
-
-.facts dd {
-  margin: 0;
-}
-
-.row-recommended td {
-  background: #1f7a4d14;
-}
-
-.meter {
-  height: 6px;
-  width: 100%;
-  max-width: 140px;
-  background: var(--color-border);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 0.25rem;
-}
-
-.meter > div {
-  height: 100%;
-}
-
-.option-card.recommended {
-  border: 2px solid var(--color-success);
-}
-
-.option-card h3 {
-  margin: 0 0 0.35rem;
-}
-
-.option-card h4 {
-  margin: 1rem 0 0.35rem;
-  font-size: 0.9rem;
-}
-
-.option-card p {
-  margin: 0;
-}
-
-.option-head {
-  margin-bottom: 0.75rem;
-}
-
-.metric {
+.thumb-placeholder {
   display: flex;
-  flex-direction: column;
-  margin-top: 0.75rem;
-}
-
-.metric-value {
-  font-size: 2rem;
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.segment-bar {
-  display: flex;
-  height: 14px;
-  border-radius: 7px;
-  overflow: hidden;
-  gap: 2px;
-  background: var(--color-border);
-}
-
-.segment-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.9rem;
-  margin-top: 0.35rem;
-  font-size: 0.85rem;
-}
-
-.segment-legend i {
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
-  margin-right: 0.3rem;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.chip {
-  font-size: 0.8rem;
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
+  align-items: center;
+  justify-content: center;
+  background-color: var(--field);
+  background-image: var(--hatch);
 }
 
 .concerns {
   margin: 0;
-  padding-left: 1.1rem;
-  font-size: 0.9rem;
+  padding-left: 1.125rem;
+  font-size: 0.9375rem;
+}
+
+.concerns li::marker {
+  color: var(--mark-amber);
 }
 
 .quote {
   margin: 0.75rem 0 0;
-  padding: 0.5rem 0.75rem;
-  border-left: 3px solid var(--color-border);
-  font-size: 0.88rem;
+  padding: 0.5rem 0 0.5rem 0.75rem;
+  border-left: 1px solid var(--rule-strong);
+  font-size: 0.9375rem;
 }
 
 .quote p {
   margin: 0.25rem 0 0;
-  font-style: italic;
 }
 
 .reaction {
-  margin-bottom: 0.6rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--color-border);
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.reaction:last-child {
+  border-bottom: 0;
 }
 
 .reaction-head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.375rem;
+}
+
+.reaction-marks {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+details > summary {
+  cursor: pointer;
+  font-stretch: 70%;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-2);
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+details > summary:hover {
+  color: var(--ink);
+}
+
+/* --- The run: stages as a ruled progress record --- */
+
+.stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr max-content;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--rule);
+  position: relative;
+}
+
+.stage-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+}
+
+.stage.done .stage-mark {
+  color: var(--mark-green);
+}
+
+.stage.active .stage-mark {
+  color: var(--ink);
+}
+
+.stage.pending {
+  color: var(--ink-2);
+}
+
+/* The sheet's one motion material is the rule itself. A finished stage
+ * carries a green rule along its bottom edge; nothing about it moves. */
+.stage.done::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 1px;
+  background: var(--mark-green);
+  transform-origin: left;
+}
+
+/* It is drawn, once, only for a stage that finished while the reader was
+ * watching. Stages already complete when the page opened are simply ruled:
+ * replaying their history on mount would be load choreography, and it
+ * would say four things finished just now when none of them did. */
+.stage.just-done::after {
+  animation: rule-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes rule-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* The stage in progress keeps its rule being drawn: a short segment
+ * passing under the row, the ruling pen still moving. A run takes minutes
+ * and is watched live, so the difference between working and stalled has
+ * to be visible without reading the clock. */
+.stage.active::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 1px;
+  background-image: linear-gradient(90deg, transparent, var(--ink-2), transparent);
+  background-size: 28% 100%;
+  background-repeat: no-repeat;
+  /* The segment is painted inside a full-width rule rather than moved
+   * across one, so the row needs no clipping and the mark can still sit
+   * over the hairline border where every other rule on this sheet sits.
+   * It alternates instead of repeating: a pen passing back and forth has
+   * no seam, where a reset would flick. */
+  animation: rule-travel 1600ms cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+
+@keyframes rule-travel {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
+}
+
+/* A loop nobody is looking at is a loop that should not run. */
+.stages[data-page-hidden='true'] .stage.active::after {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage.just-done::after {
+    animation: none;
+  }
+
+  /* Travel goes; the signal does not. The active rule fills its row and
+   * breathes instead, so "still working" survives without movement. */
+  .stage.active::after {
+    background-image: none;
+    background-color: var(--ink-2);
+    animation: rule-breathe 2400ms ease-in-out infinite;
+  }
+
+  @keyframes rule-breathe {
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+    50% {
+      opacity: 0.85;
+    }
+  }
+}
+
+/* --- Empty and loading --- */
+
+.empty {
+  border: 1px solid var(--rule);
+  background-color: var(--sheet);
+  background-image: var(--hatch);
+  padding: 1.5rem;
+}
+
+.empty-body {
+  background: var(--sheet);
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--rule);
+  max-width: var(--measure);
+}
+
+.empty-body h3 {
+  margin-top: 0;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+}
+
+/* --- Field blocks that take two columns on a laptop --- */
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0 1rem;
+}
+
+.tier-row {
+  display: grid;
+  grid-template-columns: 1fr 9rem max-content;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+}
+
+.tier-row:last-of-type {
+  margin-bottom: 0;
+}
+
+/* --- Product list: the photo leads, the entry reads beside it --- */
+
+.product-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.product-item {
+  border: 1px solid var(--rule);
+  background: var(--sheet);
+}
+
+.product-item .thumb {
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.product-item-body {
+  padding: 0.75rem 0.875rem 0.875rem;
+}
+
+.product-item-body h3 {
+  margin-bottom: 0.125rem;
+}
+
+.product-item-body p {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* --- Feedback: controls acknowledge the pointer in the time it takes to
+   notice, and only in colour. Nothing on this sheet moves on hover; a
+   control that lifts or grows is a control that has changed size while
+   being read. --- */
+
+button,
+.swatch-button,
+input,
+select,
+textarea,
+.app-nav a,
+details > summary,
+td,
+a {
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease,
+    text-decoration-color 120ms ease;
+}
+
+/* Scoping the sheet to one option is a change of what is being read, not
+   a change of place: the detail swaps in on opacity alone, fast enough to
+   keep the chip row and the detail feeling like one surface. */
+.option-grid.scope-change {
+  animation: scope-in 160ms ease-out both;
+}
+
+@keyframes scope-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .option-grid.scope-change {
+    animation-duration: 1ms;
+  }
+}
+
+/* --- Marks sit on the text baseline they belong to --- */
+
+button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.error-text svg,
+.success-text svg {
+  flex: none;
+  margin-top: 0.1875rem;
+}
+
+.app-header button.secondary {
+  border-color: var(--slate-ink-2);
+  color: var(--slate-ink);
+}
+
+.app-header button.secondary:hover:not(:disabled) {
+  background: var(--slate-2);
+  border-color: var(--slate-ink);
+  color: var(--slate-ink);
+}
+
+h1 {
+  font-size: 1.375rem;
+  margin: 0 0 0.5rem;
+}
+
+h1 .quantity {
+  font-weight: 400;
+}
+
+.card.narrow {
+  max-width: 26rem;
+  margin: 2rem auto;
+}
+
+.card > :last-child {
+  margin-bottom: 0;
+}
+
+/* Prose on an empty field sits on a cleared light zone rather than in a
+ * second box: a bordered panel inside a bordered card reads as nested
+ * cards, which this system does not use anywhere. */
+.empty-body {
+  border: 0;
+}
+
+/* --- Narrow laptops and below: the sheet keeps its measure, the
+   apparatus stacks. --- */
+
+@media (max-width: 900px) {
+  .facts {
+    grid-template-columns: 1fr;
+  }
+
+  .facts dt {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .stage {
+    grid-template-columns: 1.25rem 1fr;
+  }
+
+  .stage > :last-child {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-main {
+    padding: 1rem;
+  }
+
+  .app-header {
+    padding: 0.625rem 1rem;
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+  }
+
+  .table-scroll table {
+    min-width: 34rem;
+  }
+
+  .tier-row {
+    grid-template-columns: 1fr 6.5rem max-content;
+  }
 }

@@ -1,7 +1,12 @@
-/** One horizontal bar split into labelled parts, with the counts written out
+/** One ruled bar split into labelled parts, with the counts written out
  * underneath ("2 likely to buy · 1 undecided · 2 unlikely"). Replaces the
- * sentiment pie chart: the reader gets the numbers in words, not slice sizes
- * to estimate. */
+ * sentiment pie chart: the reader gets the numbers in words, not slice
+ * sizes to estimate.
+ *
+ * Each part's width is its real share of the total -- the bar is a
+ * measurement, so nothing is padded to a minimum width for legibility. A
+ * part too thin to see is a part with almost no responses in it, and the
+ * written counts below carry the number regardless. */
 export interface Segment {
   label: string
   value: number
@@ -18,14 +23,18 @@ export default function SegmentBar({ segments, ariaLabel }: { segments: Segment[
         {segments
           .filter((s) => s.value > 0)
           .map((s) => (
-            <div key={s.label} style={{ flex: s.value, background: s.color }} title={`${s.value} ${s.label}`} />
+            <span
+              key={s.label}
+              style={{ flex: s.value, background: s.color }}
+              title={`${s.value} ${s.label}`}
+            />
           ))}
       </div>
       <div className="segment-legend">
         {segments.map((s) => (
           <span key={s.label}>
             <i style={{ background: s.color }} />
-            <strong>{s.value}</strong> {s.label}
+            <strong className="quantity">{s.value}</strong> {s.label}
           </span>
         ))}
       </div>
