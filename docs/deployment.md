@@ -17,6 +17,51 @@ hostnames aren't predictable before first deploy, so the frontend calls the
 backend's public URL directly (CORS-enabled) instead of relying on a
 same-origin reverse proxy the way local `docker compose up` does.
 
+## Before deploying the current pipeline (required, as of 2026-10-13)
+
+This runbook was written for the MVP. The pipeline has changed since (see
+`REPORT.md` §8.4–8.6), and **a deployment from the current code will not
+generate images until the first item below is fixed** — even with the
+GAN-only default. None of these have been done or tested in a real deploy.
+
+1. **Model weights.** `backend/entrypoint.sh` still downloads the superseded
+   StyleGAN2 cat checkpoint (`afhqcat.pkl`), but the app now defaults to the
+   FastGAN at `storage/fastgan/models/shoes150k/model_20.pt`. The weights
+   exist only on the development machine (excluded from git) and must be
+   hosted somewhere the server can download them, with `entrypoint.sh`
+   updated to fetch them:
+
+   | File | Size | Needed for |
+   |---|---|---|
+   | `fastgan/models/shoes150k/model_20.pt` + `.config.json` | 221 MB | Any image generation (GAN path, and the hybrid fallback) |
+   | `esrgan/models/shoes512/net_g_ema_050000.pt` | 47 MB | `SR_ENABLED=true` |
+   | `review_index/` (3 files) | 279 MB | `REVIEW_GROUNDING_ENABLED=true` — or rebuild on the server with `python -m scripts.build_review_index` (needs the `ref_reviews` table populated) |
+
+2. **Persona model.** A deployed server cannot reach a local Ollama. Either
+   set `LLM_PROVIDER=anthropic` with `ANTHROPIC_API_KEY` (paid), or use Ollama
+   Cloud directly: `OLLAMA_BASE_URL=https://ollama.com`,
+   `OLLAMA_API_KEY=<key from ollama.com/settings/keys>`,
+   `OLLAMA_MODEL=gemma4:31b`. The direct Ollama Cloud route has **not** been
+   tested from this code (development used a local Ollama signed in to the
+   cloud) — try it with the one-line check in `REPORT.md` §11 first.
+
+3. **Hybrid pipeline settings** (set in the Render dashboard as secrets, never
+   in `render.yaml`): `GENERATOR_BACKEND=hybrid`, `IMAGE_PROVIDER=cloudflare`,
+   `IMAGE_API_KEY` (Cloudflare API token with the Workers AI permission),
+   `CLOUDFLARE_ACCOUNT_ID`, `DIFFUSION_INIT=product`, `DIFFUSION_OUTPUT_SIZE=512`,
+   `SR_ENABLED=true`, `LLM_VISION=true`, `REVIEW_GROUNDING_ENABLED=true`. Each is
+   documented in `backend/.env.example`. Without them the deployment runs the
+   GAN-only pipeline.
+
+4. **Memory.** PyTorch, the FastGAN, the ESRGAN and the sentence-embedding
+   model are all loaded by the backend; Render's free instance size is very
+   likely too small for this. Check current instance limits and expect to need
+   a paid instance — not measured.
+
+5. **Secrets.** `render.yaml` generates `JWT_SECRET_KEY` on Render. If you
+   deploy anywhere else, replace the `changeme-…` placeholder from
+   `backend/.env.example`.
+
 ## Prerequisites
 
 - A Render account (free to create).
@@ -62,23 +107,24 @@ with placeholder URLs for exactly the two values that can only be known
 Open the frontend's URL in a browser and run through the real user journey:
 register → log in → upload a product → configure a scenario → run a
 simulation → watch it complete → view the dashboard → download a report.
-The GAN checkpoint (~364MB) downloads automatically on the backend's first
-request that needs it (`entrypoint.sh`, Step 42) — the first simulation run
-will be slower than subsequent ones for this reason alone, not a bug.
+Model weights download on the backend's first start (`entrypoint.sh`) — the
+first simulation run will be slower than subsequent ones for this reason alone,
+not a bug. (`entrypoint.sh` must be updated first; see "Before deploying the
+current pipeline" above.)
 
 If the frontend can't reach the backend (network errors in the browser
 console), double check Step 2 was applied to *both* services and that the
 frontend redeploy in Step 2.3 actually completed.
 
-## Optional — enable real LLM-driven persona reactions
+## Persona reactions need a reachable model
 
-Without this, persona reactions are clearly-marked `[LLM_ERROR]` placeholder
-text (Steps 20-21's disclosed, documented gap) — the rest of the pipeline
-still runs correctly around it. To enable real reactions: **dryrunai-backend**
-→ **Environment** → set `ANTHROPIC_API_KEY` to a real key from
-[console.anthropic.com](https://console.anthropic.com/). This field is
-`sync: false` in `render.yaml`, meaning Render never reads it from the repo —
-it only ever exists as a value you set directly in the dashboard.
+Without a reachable persona model, reactions are clearly-marked `[LLM_ERROR]`
+placeholder text — the rest of the pipeline still runs around it, but the
+results are meaningless. `render.yaml` defaults to `LLM_PROVIDER=anthropic`:
+set `ANTHROPIC_API_KEY` under **dryrunai-backend** → **Environment** (a key from
+[console.anthropic.com](https://console.anthropic.com/); `sync: false`, so it
+only ever exists in the dashboard), or switch to Ollama Cloud as described in
+"Before deploying the current pipeline" above.
 
 ## Notes on the free tier
 

@@ -1,5 +1,7 @@
 # Training DryRunAI's GAN on Another Machine
 
+> **Priority note (2026-10-13): this run is optional.** Since the hybrid pipeline (`REPORT.md` §8.4), delivered images are rendered by a hosted diffusion model and upscaled by the project's ESRGAN; the FastGAN is the fallback and the measured baseline. A better FastGAN improves those two roles and the GAN-vs-diffusion comparison, but it no longer shapes what users see. The instructions below are still accurate.
+
 How to move this project to a faster GPU box, run the large training cycle, and
 bring the result back. Training needs **no database, no frontend, and no
 Ollama** — it is a self-contained PyTorch job.

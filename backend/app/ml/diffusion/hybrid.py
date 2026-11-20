@@ -1,16 +1,21 @@
-"""Hybrid variant generation: the GAN explores, a hosted diffusion model renders.
+"""Hybrid variant generation: a hosted diffusion model renders each variant;
+the FastGAN provides the fallback.
 
-1. The FastGAN generates GAN_OVERSAMPLE x n rough design concepts around the
-   product's anchor latent (optimiser hints still steer this, exactly as in the
-   GAN-only path).
-2. The n concepts whose silhouette is closest to the uploaded product photo are
-   kept, with a penalty for near-duplicates so the n stay distinct.
-3. Each kept concept is refined by the diffusion API (img2img) using a prompt
-   built from the product's own name/description plus the colour the GAN
-   variant was assigned.
+1. The FastGAN generates GAN_OVERSAMPLE x n candidates around the product's
+   anchor latent (optimiser hints still steer them, as in the GAN-only path),
+   and the n with the closest silhouette to the uploaded photo are kept. Each
+   carries the colour the optimiser asked for.
+2. Each variant is rendered by the diffusion API from a prompt built from the
+   product's own name/description plus that colour. With DIFFUSION_INIT=
+   "product" (default) the render starts from the uploaded photo; with "seed"
+   it starts from the GAN candidate. Measured: the candidate does not steer
+   the render (see config.DIFFUSION_INIT), so in the default mode the GAN's
+   image is only used as the fallback.
+3. The trained ESRGAN (app/ml/sr) then upscales the render -- that is where a
+   GAN shapes the final image (gan_service, SR_ENABLED).
 
 Failures are isolated per variant: if a render fails, or the per-simulation
-API budget is used up, that variant keeps its GAN concept image and is marked
+API budget is used up, that variant keeps its GAN image and is marked
 generation_method="gan", so a flaky or exhausted API never aborts a simulation.
 """
 
@@ -158,7 +163,10 @@ def generate_hybrid_variants(
                 reference_image=product_image if use_reference and settings.DIFFUSION_INIT == "seed" else None,
             )
             attributes["generation_method"] = HYBRID_METHOD
-            results.append(VariantResult(image=rendered.convert("RGB"), attributes=attributes, seed_image=seed.image))
+            # The GAN candidate is kept as a "before" image only when the render
+            # actually started from it; otherwise it would misrepresent the output.
+            results.append(VariantResult(image=rendered.convert("RGB"), attributes=attributes,
+                                         seed_image=seed.image if settings.DIFFUSION_INIT == "seed" else None))
         except Exception as e:  # isolate per variant, like persona_service's LLM calls
             logger.warning("Diffusion render failed for product=%s variant=%d: %s", product_id, index, e)
             attributes["generation_method"] = GAN_FALLBACK_METHOD

@@ -1,6 +1,21 @@
 # Generator Alternatives — GAN, Diffusion, or Both
 
-**Status:** decision document. **No code has been changed.** Nothing here is implemented.
+> ## Outcome (2026-10-13)
+>
+> **Option B was adopted, with two changes from this document's proposal.** Full record: `IMPLEMENTATION.md` Steps 48–49 and `REPORT.md` §8.4–8.5.
+>
+> 1. **A hosted model, not local SD 1.5.** The diffusion backend calls Cloudflare Workers AI (FLUX.2 Klein 4B) on its free daily allowance, so there is no VRAM contention with the persona model (§7.1) and no GPU needed in production (§7.5). Gemini was also implemented, but its free tier allows no image requests.
+> 2. **The GAN does not seed the render.** This document's premise was that the FastGAN concept would steer the image (strength ~0.4–0.6). Measured on 4 real products × 5 concepts × 3 strengths, renders started from the GAN concept were indistinguishable from renders of the product photo alone (outline similarity to the concept 0.586–0.605 with it vs 0.589 without it). Renders therefore start from the photo, which also fixes §1.2 (variants are now genuinely of the uploaded product). The project's GAN contribution to the delivered image is instead an **ESRGAN upscaler trained from scratch**, which takes every 512 px render to 1024 px; the FastGAN remains the fallback and the baseline.
+>
+> **The §9 reversal criteria, as they turned out:**
+> 1. *Beat FID 274.0 on a common reference set* — not run in that form. The renders were judged on sample grids and on resemblance to the product; an end-to-end hybrid run scored FID 60.7 against its product's own reference images, which is not comparable to 274.0. A same-reference comparison is still worth running for the report.
+> 2. *VRAM thrashing* — does not apply to a hosted model. A two-variant, one-round simulation took 135 s.
+> 3. *Deployment slipping* — Steps 42–43 are still open; the hybrid pipeline adds requirements to them (`docs/deployment.md`).
+> 4. *Guide ruling on pretrained weights* — still pending.
+>
+> The analysis below is kept as written, as the record of how the decision was reached.
+
+**Status (as written, before the outcome above):** decision document. **No code has been changed.** Nothing here is implemented.
 
 **Why this document exists.** `IMPLEMENTATION.md` Decision #5 resolved the MVP to a GAN and closed the question with a specific escape clause:
 

@@ -1,5 +1,7 @@
 # Product Requirements Document — DryRunAI
 
+> **Historical requirements record (2026-10-13).** This document describes the project as specified at the design stage, before any code existed, and is kept unchanged as that record. The system has since been built: decisions are resolved in `IMPLEMENTATION.md` ("Decisions This Document Resolves" and its revision notes), and the current state is in `REPORT.md`. How each open decision in §37 was resolved is summarised at the end of §37.
+
 **A GAN-Centric Generative AI Framework for Pre-Launch Product Simulation and Product–Market Fit Optimization**
 
 ## Provenance & Methodology
@@ -336,3 +338,22 @@ Not quantified anywhere. The closest the documents come is a qualitative list of
 | 11 | No documented integration mechanics between the core system and the dataset-extraction pipeline's output (`master_products.csv`, images, reviews, market, product-intelligence) — no shared API, DB, or file-path convention specified anywhere in either codebase | **MEDIUM** | §21 |
 
 None of these are resolved by this PRD, per the analysis instructions — they are flagged for explicit resolution by the project team/guide before the corresponding subsystem is implemented.
+
+### Resolution status (as of 2026-10-13)
+
+Resolved in `IMPLEMENTATION.md`; evidence in `REPORT.md`.
+
+| # | Decision | Resolution |
+|---|---|---|
+| 1 | Optimisation-loop mechanism | Heuristic/threshold weighting with latent and colour nudging (Decision #3); RL, Bayesian and genetic search left as future work. Implemented. |
+| 2 | GAN-centric vs diffusion | Both. A hosted diffusion model (Cloudflare FLUX.2 Klein) renders the delivered images from the uploaded photo; the project's GAN contribution is an ESRGAN upscaler trained from scratch, plus the FastGAN generator (trained from scratch) as fallback and measured baseline. Measured: FastGAN concepts do not steer the diffusion render, so they are not used as its starting image (`REPORT.md` §8.4). |
+| 3 | Persona diversity/scale | A seeded library of 20 structured persona templates (Decision #4), now grounded in real reviews of similar products and shown the variant image. Dynamic LLM-authored personas not built (Phase 17, Step 46). |
+| 4 | Training strategy vs hardware | Both GANs trained from scratch on the local RTX 4050 (6 GB): FastGAN on 150,031 product photos, ESRGAN on 19,813 512px photos. Diffusion and the persona model are hosted, inference only. StyleGAN2 transfer learning was attempted three times and failed (`REPORT.md` §8.2). |
+| 5 | Realism / consistency metrics | FID per generation batch and a persona re-run consistency check (Decision #7); plus PSNR/SSIM/VGG distance for the upscaler and scripted evaluations of rendering and persona quality. |
+| 6 | Loop stopping criteria | Max iterations (default 3) or PMF plateau, whichever comes first (Decision #8). |
+| 7 | Depth of market simulation | Aggregate of persona-level sentiment, engagement and purchase intent (Decision #9); no economic model. Business-facing results report the average purchase likelihood and how many customer profiles would buy. |
+| 8 | Certified vs working architecture | The certified 7-layer architecture, built as a modular monolith (Decisions #1, #10). From the working Phase-3 design, review retrieval (RAG) was built; agent orchestration, Celery/Redis and MLflow were not. |
+| 9 | Scenario configuration before or after generation | Before: the scenario is captured when the simulation is created (Step 27). |
+| 10 | Literature review gaps table | Not addressed — outside the software deliverable. |
+| 11 | Dataset-pipeline integration | One-way, file-based batch ingestion into read-only `ref_*` tables (Decision #12); 730,713 real rows ingested. |
+

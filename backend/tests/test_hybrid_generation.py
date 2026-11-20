@@ -95,8 +95,11 @@ def test_product_init_does_not_send_the_photo_twice(db_session, fake_gan_generat
 
     monkeypatch.setattr(settings, "DIFFUSION_INIT", "product")
     simulation = _make_product_simulation(db_session)
-    gan_service.generate_variants_for_simulation(db_session, simulation.id, 2)
+    variants = gan_service.generate_variants_for_simulation(db_session, simulation.id, 2)
     assert all(call["reference_image"] is None for call in fake_image_provider.calls)
+    # The GAN candidate was not used, so it must not be presented as the "before" image.
+    assert all("seed_image_path" not in v.attributes for v in variants)
+    assert all(v.generation_method == hybrid.HYBRID_METHOD for v in variants)
 
 
 def test_failed_render_falls_back_to_gan_without_aborting(db_session, fake_gan_generator, fake_image_provider):
