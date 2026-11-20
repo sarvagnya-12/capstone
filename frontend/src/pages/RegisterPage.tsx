@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { register } from '../api/auth'
 import { apiErrorMessage } from '../api/client'
+import { FlagMark } from '../components/Icon'
 
 function RegisterPage() {
   const navigate = useNavigate()
@@ -29,7 +30,7 @@ function RegisterPage() {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 360, margin: '2rem auto' }}>
+    <section className="card narrow">
       <h1>Create an account</h1>
       <form onSubmit={handleSubmit}>
         <div className="form-field">
@@ -58,17 +59,21 @@ function RegisterPage() {
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
           />
-          <span className="muted">At least 8 characters.</span>
+          <span className="form-hint">At least 8 characters.</span>
         </div>
-        {error && <p className="error-text">{error}</p>}
+        {error && (
+          <p className="error-text">
+            <FlagMark /> {error}
+          </p>
+        )}
         <button type="submit" disabled={submitting}>
           {submitting ? 'Creating account…' : 'Register'}
         </button>
       </form>
-      <p className="muted">
+      <p className="muted" style={{ marginBottom: 0 }}>
         Already have an account? <Link to="/login">Log in</Link>
       </p>
-    </div>
+    </section>
   )
 }
 

@@ -55,10 +55,11 @@ class Settings(BaseSettings):
 
     # Variant generator backend.
     #   "gan"    -- FastGAN only (the measured baseline; default, needs no key).
-    #   "hybrid" -- the GAN generates GAN_OVERSAMPLE x n rough concepts, the n
-    #               closest to the uploaded product are kept, and a hosted
-    #               diffusion API refines each one (img2img) into the final
-    #               variant. The GAN explores; diffusion renders.
+    #   "hybrid" -- a hosted diffusion API renders each variant from the
+    #               uploaded product photo; the trained ESRGAN (SR_ENABLED)
+    #               upscales the result. The FastGAN still runs: it is the
+    #               fallback image whenever a render fails or the API budget
+    #               is spent, and the baseline the hybrid output is compared to.
     GENERATOR_BACKEND: Literal["gan", "hybrid"] = "gan"
 
     # Hosted diffusion API used by the hybrid backend. The provider is not
@@ -80,11 +81,15 @@ class Settings(BaseSettings):
     # img2img denoise strength: 0 returns the init image untouched, 1 ignores
     # it. ~0.4-0.6 keeps the GAN concept's shape while fixing its rendering.
     DIFFUSION_STRENGTH: float = 0.55
-    # "seed": init image is the GAN concept (the GAN shapes the result).
-    # "product": init image is the uploaded photo (GAN seed is only used to
-    # pick the colour/variation hints). Kept switchable so the comparison
-    # decides, not an assumption.
-    DIFFUSION_INIT: Literal["seed", "product"] = "seed"
+    # "product" (default): the render starts from the uploaded photo.
+    # "seed": it starts from a FastGAN concept, with the photo as reference.
+    # Measured (scripts/compare_diffusion_strength.py, 4 real products x 5
+    # concepts x 3 strengths, Cloudflare FLUX.2 Klein): renders from the GAN
+    # concept were indistinguishable from renders of the photo alone -- outline
+    # similarity to the concept 0.586-0.605 vs 0.589 without it -- so the
+    # concept costs an extra input image and changes nothing. Kept as an option
+    # for providers that honour the init image more closely.
+    DIFFUSION_INIT: Literal["seed", "product"] = "product"
     GAN_OVERSAMPLE: int = 3
     # Cost cap: API renders per simulation (across all rounds). Variants past
     # the cap keep their GAN concept image instead of calling the API.

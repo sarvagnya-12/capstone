@@ -1,5 +1,7 @@
 # PROJECT_CONTEXT.md — DryRunAI
 
+> **Historical requirements record (2026-10-13).** This document describes the project as specified at the design stage, before any code existed, and is kept unchanged as that record. The system has since been built: decisions are resolved in `IMPLEMENTATION.md` ("Decisions This Document Resolves" and its revision notes), and the current state is in `REPORT.md`. In particular, "Status: 100% design-stage" below is no longer true.
+
 Dense technical context for Claude Code sessions. Companion document: `PRD.md` (same directory) — read that for full detail/tables; this file is the compressed version for fast session start.
 
 ## Provenance

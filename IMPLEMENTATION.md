@@ -1,6 +1,6 @@
 # IMPLEMENTATION.md — DryRunAI
 
-**Status of this document:** Final, single-source-of-truth implementation plan. Supersedes any informal planning — if this document and a future ad-hoc suggestion disagree, this document wins unless explicitly revised.
+**Status of this document:** Final, single-source-of-truth implementation plan, last revised 2026-10-13 (Phase 18; see the revision notes below the decisions table). Supersedes any informal planning — if this document and a future ad-hoc suggestion disagree, this document wins unless explicitly revised.
 
 **Built from:** `PRD.md` and `PROJECT_CONTEXT.md` (requirements authority), plus a direct inspection of the repository (confirmed: zero core-system code exists anywhere) and of the dataset-extraction pipeline's public interface at `Capstone Dataset (Archived)/Capstone Dataset/DryRunAI/schemas/*.json` (its internals remain out of scope, per standing project instruction).
 
@@ -14,8 +14,15 @@ PRD.md §37 lists eleven open decisions and explicitly states none of them are r
 | 2 | Tech stack (all either/or in SRS Table 5.5) | Backend: **FastAPI**. Frontend: **React** (Vite + TypeScript). Database: **PostgreSQL**. GAN framework: **PyTorch**. | Confirmed with project owner. FastAPI is the SRS's own "preferred for performance" option; the class diagram (Fig 6.3) is inherently relational, favoring Postgres over MongoDB; PyTorch has the stronger pretrained-GAN-checkpoint ecosystem (StyleGAN2/StyleGAN2-ADA). |
 | 3 | Optimization-loop mechanism | **Heuristic/threshold weighting**: latent-space nudging + scenario-weighted scoring + threshold-based risk gating. No RL, no Bayesian/genetic search in the MVP. | Confirmed with project owner. Matches the Abstract/synopsis description exactly, and resolves the SRS's internal self-contradiction (FR table says RL; Scope section calls RL future work) in favor of the Scope section, which is more specific and appears in more sources. Feasible on the certified modest hardware (§28); RL/Bayesian/genetic all stay documented as Phase 17+/future. |
 | 4 | Persona diversity mechanism | Curated library of **~20 predefined persona templates**, parameterized (age range, income segment, lifestyle, region, behavior traits) and grounded in `product_intelligence.csv` target-segment fields where available. Sampled per simulation, not hardcoded to 2–3 examples. Dynamic LLM-generated personas deferred to Phase 17. | Confirmed with project owner. Matches SRS §1.4's explicit current-scope statement ("predefined personas"), while still giving real variety — a meaningful improvement over the 2–3 examples that appear in every diagram. |
-| 5 | GAN-centric framing vs. Stable Diffusion | Primary and only generative model in the MVP is a **GAN**. **Revised 2026-09-24: the architecture is FastGAN (ICLR 2021), not StyleGAN2** — see the revision note below Decision #6. No diffusion model is built. | Preserves the certified "GAN-centric" title per the standing instruction not to silently pivot the core narrative. The 2026-09-24 revision changes the architecture *within* GANs and so does not touch that framing. Stable Diffusion inclusion is not part of this plan at any phase; if desired later, it is a distinct decision requiring separate approval, not something this document schedules. |
-| 6 | Training strategy vs. certified hardware (§21/§28) | ~~Transfer learning / fine-tuning from a pretrained StyleGAN2 checkpoint, on a rented cloud GPU.~~ **Revised 2026-09-24: train a FastGAN from scratch on 25,023 real product photos, on the local machine.** No pretrained weights are used. | Original rationale: reconciles the literature survey's warnings that StyleGAN2-class models are computationally heavy with the modest certified hardware spec. That reasoning was overtaken by evidence — see the revision note below. |
+| 5 | GAN-centric framing vs. Stable Diffusion | Primary and only generative model in the MVP is a **GAN**. **Revised 2026-09-24: the architecture is FastGAN (ICLR 2021), not StyleGAN2** — see the revision note below Decision #6. No diffusion model is built. **Revised 2026-10-13: a hosted diffusion model now renders the delivered images, and the project's GAN contribution is the trained ESRGAN upscaler plus the FastGAN baseline/fallback** — see the 2026-10-13 revision note. | Preserves the certified "GAN-centric" title per the standing instruction not to silently pivot the core narrative. The 2026-09-24 revision changes the architecture *within* GANs and so does not touch that framing. Stable Diffusion inclusion is not part of this plan at any phase; if desired later, it is a distinct decision requiring separate approval, not something this document schedules. |
+| 6 | Training strategy vs. certified hardware (§21/§28) | ~~Transfer learning / fine-tuning from a pretrained StyleGAN2 checkpoint, on a rented cloud GPU.~~ **Revised 2026-09-24: train a FastGAN from scratch on 25,023 real product photos, on the local machine.** No pretrained weights are used. **Revised 2026-10-13: the FastGAN was later retrained on 150,031 images (`shoes150k/model_20.pt`, FID 274.0 on a common 256-image reference set), and an ESRGAN upscaler was trained from scratch; neither GAN uses pretrained weights, but the pipeline now uses pretrained models elsewhere** (see the 2026-10-13 revision note). | Original rationale: reconciles the literature survey's warnings that StyleGAN2-class models are computationally heavy with the modest certified hardware spec. That reasoning was overtaken by evidence — see the revision note below. |
+
+| 7 | Realism / diversity / consistency metrics (undocumented anywhere) | **FID score** (via `torchmetrics`) for generated-variant realism; a simple **persona-response consistency check** (re-run the same persona × variant pair, flag high output variance) for evaluator reliability. | Closes a real, flagged gap (PRD §16, §19, §31, Open Decision #5) with standard, low-effort tooling rather than leaving generation/evaluation quality entirely unmeasured. |
+| 8 | Iteration-loop stopping criteria (undefined in Fig 6.4) | Configurable **max-iteration count (default 3)** OR **PMF-score-plateau** (recommendation score improves by less than a configurable threshold between iterations), whichever triggers first. | Closes Open Decision #6 with the simplest rule that prevents both premature stopping and unbounded looping. |
+| 9 | Depth of "market simulation" | Product-market-fit score is explicitly an **aggregate of persona-level sentiment/engagement/purchase-intent** — not a separate economic/demand model. No competitor modeling, price elasticity, or demand forecasting is built. | Matches what is actually documented and buildable (PRD §17, Open Decision #7); stated explicitly so it reads as an intentional scope decision, not a missing feature. |
+| 10 | "Microservices" (NFR, §10) vs. team size/timeline | Build a **modular monolith**: one FastAPI application with module boundaries that mirror the certified 7-layer architecture, not literal separate deployed services. | Deploying 5+ real microservices for a 4-person academic team is unnecessary complexity with no corresponding requirement forcing it; the module boundaries keep a future split possible without paying that cost now. |
+| 11 | Admin (class diagram, Fig 6.3) | Modeled as a `role` column on the `User` table (`user` \| `admin`), not a separate table. | Reproduces the exact same relationships the class diagram specifies (Admin manages Users, monitors Simulations) without a redundant entity. |
+| 12 | Dataset-pipeline integration mechanics (Open Decision #11) | A one-way, script-driven ingestion (`scripts/ingest_dataset_pipeline.py`) reads the pipeline's frozen CSV/Parquet outputs and schemas directly off disk into read-only `ref_*` tables in the core system's own Postgres database. No shared API, no shared DB, no live coupling. | The pipeline's own README states its outputs are frozen, versioned files (`datasets/versions/...`, `datasets/master/...|`) meant to be read, not a service to call. A file-based batch import is the natural, lowest-risk integration given that contract. |
 
 ### Revision note (2026-09-24) — Decisions #5 and #6
 
@@ -36,12 +43,17 @@ Attempt 3 is the decisive one: stable, no NaN, and monotonically worse anyway. `
 **Result:** FastGAN trained from scratch reached **FID 287.7 at step 14,000, down from 380.9**, and produces recognisably shoe-shaped output with laces, soles and realistic colour variety. Full record at Step 17.
 
 **Scope of the revision:** "GAN-centric" is untouched — this is one GAN architecture replacing another. The StyleGAN2 path (`model.py`, `finetune.py`, `storage/models/afhqcat.pkl`) is deliberately left working and selectable via `settings.GAN_CHECKPOINT`, so the superseded approach stays reproducible rather than deleted from the record.
-| 7 | Realism / diversity / consistency metrics (undocumented anywhere) | **FID score** (via `torchmetrics`) for generated-variant realism; a simple **persona-response consistency check** (re-run the same persona × variant pair, flag high output variance) for evaluator reliability. | Closes a real, flagged gap (PRD §16, §19, §31, Open Decision #5) with standard, low-effort tooling rather than leaving generation/evaluation quality entirely unmeasured. |
-| 8 | Iteration-loop stopping criteria (undefined in Fig 6.4) | Configurable **max-iteration count (default 3)** OR **PMF-score-plateau** (recommendation score improves by less than a configurable threshold between iterations), whichever triggers first. | Closes Open Decision #6 with the simplest rule that prevents both premature stopping and unbounded looping. |
-| 9 | Depth of "market simulation" | Product-market-fit score is explicitly an **aggregate of persona-level sentiment/engagement/purchase-intent** — not a separate economic/demand model. No competitor modeling, price elasticity, or demand forecasting is built. | Matches what is actually documented and buildable (PRD §17, Open Decision #7); stated explicitly so it reads as an intentional scope decision, not a missing feature. |
-| 10 | "Microservices" (NFR, §10) vs. team size/timeline | Build a **modular monolith**: one FastAPI application with module boundaries that mirror the certified 7-layer architecture, not literal separate deployed services. | Deploying 5+ real microservices for a 4-person academic team is unnecessary complexity with no corresponding requirement forcing it; the module boundaries keep a future split possible without paying that cost now. |
-| 11 | Admin (class diagram, Fig 6.3) | Modeled as a `role` column on the `User` table (`user` \| `admin`), not a separate table. | Reproduces the exact same relationships the class diagram specifies (Admin manages Users, monitors Simulations) without a redundant entity. |
-| 12 | Dataset-pipeline integration mechanics (Open Decision #11) | A one-way, script-driven ingestion (`scripts/ingest_dataset_pipeline.py`) reads the pipeline's frozen CSV/Parquet outputs and schemas directly off disk into read-only `ref_*` tables in the core system's own Postgres database. No shared API, no shared DB, no live coupling. | The pipeline's own README states its outputs are frozen, versioned files (`datasets/versions/...`, `datasets/master/...|`) meant to be read, not a service to call. A file-based batch import is the natural, lowest-risk integration given that contract. |
+
+### Revision note (2026-10-13) — generation, personas and results presentation
+
+Four changes after the MVP, each measured rather than assumed. Full record in Steps 48–51 (Phase 18) and `REPORT.md` §8.4–8.7.
+
+1. **Images are rendered by a hosted diffusion model** (Cloudflare Workers AI, FLUX.2 Klein 4B; free daily allowance) from the uploaded product photo (Step 48). The FastGAN could not produce realistic images, and its variants were random draws unrelated to the uploaded product (`GENERATOR_ALT.md` §1).
+2. **The GAN's role in the final image is the upscaler.** An ESRGAN trained from scratch on 19,813 real 512px shoe photos upscales every render 2× (Step 49). The FastGAN remains the fallback image when a render fails and the measured baseline. Using the FastGAN output as the diffusion *starting image* was tested and rejected: renders from it were indistinguishable from renders of the product photo alone (outline similarity to the GAN concept 0.586–0.605 with it vs 0.589 without it, 4 products × 5 concepts × 3 strengths).
+3. **Personas see the variant image and are grounded in real reviews** (Step 50): a vision-capable hosted model (`gemma4:31b-cloud` via Ollama Cloud) receives the image, and 5 rating-balanced real reviews of similar products are retrieved from 349,752 Amazon reviews.
+4. **Results are presented in business terms** (Step 51): the dashboard, PDF and CSV state purchase likelihood, how many customer profiles would buy, concerns and next steps, instead of FID, engagement proxies and a min-max-normalised score.
+
+**Scope of the revision.** "GAN-centric" now rests on two GANs the project trained itself — the FastGAN generator (baseline and fallback) and the ESRGAN upscaler, which shapes every delivered image — rather than on the GAN generating the final design. This is stated plainly instead of claiming the FastGAN seeds the diffusion render, which the measurement above contradicts. **Pretrained weights are now used outside the GAN** (the hosted diffusion model, the hosted persona model, VGG19 inside the ESRGAN training loss only, a sentence-embedding model for review search); Decision #6's "no pretrained weights" applies to the two GANs, both trained from random initialisation. Whether hosted pretrained models fit the public-data constraint (PRD §5.6) needs the guide's sign-off.
 
 Everything else in PRD.md §37 (pipeline-stage ordering, the literature review's unfilled per-member gaps table) is LOW priority and non-blocking for implementation; it is not re-litigated here.
 
@@ -72,6 +84,8 @@ Every phase after Phase 4 that touches AI/ML (GAN, persona/LLM, sentiment, risk,
 ---
 
 # 2. Current Project State
+
+> **Historical — this section records the state when the plan was written (August 2026), before any code existed.** Today Phases 1–15 are complete, Phase 16 is configured but not deployed (Steps 42–43), Step 44 of Phase 17 and all of Phase 18 are complete. The current state is summarised in `REPORT.md` §12 and in §10 (Definition of Done) below.
 
 **What is already implemented:** Nothing. A direct filesystem check confirms there is no backend, frontend, database schema, API, or ML code anywhere in this repository for the core DryRunAI system.
 
@@ -117,8 +131,9 @@ No completed work is re-described as future work anywhere below — every step i
 | 15 | Testing & Hardening | Test suite, E2E pass, security review |
 | 16 | Deployment | Containerized, deployed, verified system |
 | 17 | Phase-3 Enhancements (optional) | Vector KB, async queue, dynamic personas, experiment tracking |
+| 18 | Generation and Evaluation Upgrades (post-MVP, 2026-10) | Hybrid diffusion rendering, ESRGAN upscaler, vision + review-grounded personas, business-facing results |
 
-Phases 1–16 constitute the certified-scope MVP (Decision #1). Phase 17 is explicitly optional and only begins after the Phase 16 milestone (§6, M6) is reached.
+Phases 1–16 constitute the certified-scope MVP (Decision #1). Phase 17 is explicitly optional and only begins after the Phase 16 milestone (§6, M6) is reached. Phase 18 was added on 2026-10-13 to record the work that replaced the GAN's role in the delivered images and upgraded persona evaluation (see the 2026-10-13 revision note); it was done before Phase 16's live deployment.
 
 ---
 
@@ -2172,6 +2187,11 @@ Every verification item passes against the real deployment; at least one real (n
 
 ### Step 44 — Vector Knowledge Base (FAISS) for RAG-Grounded Persona Prompts
 
+**Status: ✅ Completed (2026-10-10), built without FAISS.** See Step 50 for the full record; the deviations from the plan text below:
+- **No FAISS.** `scripts/build_review_index.py` embeds the 349,752 usable reviews (≥ 60 characters after HTML clean-up, of 496,592) with `all-MiniLM-L6-v2` into a NumPy matrix; exact search takes ~0.06 s, so an approximate-search library would add a dependency for no practical gain. Only `sentence-transformers` was added.
+- **Two-stage retrieval, rating-balanced** (`app/ml/retrieval/reviews.py`): the 3,000 reviews most relevant to the product, re-ranked by the persona's own behaviour clause (weight 0.7), then 2 negative / 1 mixed / 2 positive. Measured: the first single-query version gave 8 lifestyles nearly the same reviews (3.79 of 5 shared per pair, 8 distinct); the final version shares 1.57 of 5, with 20 distinct per product. Balancing matters because 64% of the corpus is 5-star.
+- Behind `REVIEW_GROUNDING_ENABLED`; a missing index degrades to ungrounded prompts with a warning.
+
 #### When
 After Phase 16, optional. Independent of Steps 45–47.
 
@@ -2315,6 +2335,54 @@ Fine-tuning runs are tracked and comparable; no fine-tuning run happens outside 
 
 ---
 
+## Phase 18 — Generation and Evaluation Upgrades (post-MVP, 2026-10)
+
+Added 2026-10-13 to record work done after the MVP and before live deployment. Each step was driven by a measured failure, not a planned enhancement: the FastGAN's output was not realistic and not derived from the uploaded product; personas could not see the variants and wrote generic reactions; the results screen and reports were written for engineers. Rationale and scope are in the 2026-10-13 revision note at the top of this document; measurements are in `REPORT.md` §8.4–8.7.
+
+### Step 48 — Hybrid Rendering with a Hosted Diffusion Model
+
+**Status: ✅ Completed (2026-10-13).**
+
+- `app/ml/diffusion/provider.py`: an `ImageProvider` Protocol (mirroring `app/ml/llm/provider.py`) with two adapters — **Cloudflare Workers AI, FLUX.2 Klein 4B** (in use; free allowance of 10,000 neurons/day, ~37 neurons per 512px render) and **Gemini** (written, but its free tier allows 0 image requests, so it needs billing). Instruction-based editors have no denoise strength, so strength is translated into instruction wording.
+- `app/ml/diffusion/hybrid.py` + one branch in `gan_service.generate_variants_for_simulation`, behind `GENERATOR_BACKEND=hybrid` (default stays `gan`). The render starts from the uploaded photo (`DIFFUSION_INIT=product`, default) with a prompt built from the product's name, category, description and the colour the optimiser requested. The brand is left out of the image prompt because image models draw it as garbled lettering.
+- **Failure isolation:** a failed render, or a spent per-simulation budget (`MAX_API_IMAGES_PER_SIMULATION`), keeps the FastGAN image for that variant and marks it `generation_method="gan"`. Cloudflare's output safety filter flags ordinary shoe photos at random (about a quarter of renders in testing; one adidas product 100%), so flagged renders are retried with a new seed up to 3 times.
+- **Measured** (`scripts/compare_diffusion_strength.py`, 4 held-out real products × 5 GAN concepts × strengths 0.3/0.55/0.85, vs photo-only): renders keep the product's design and change colourway realistically; renders started from the GAN concept were indistinguishable from photo-only renders, which is why the GAN concept is not used as the starting image by default.
+- Tests: `tests/test_diffusion_provider.py`, `tests/test_hybrid_generation.py` (mocked HTTP and a fake provider; no test calls a real API — `tests/conftest.py` pins every pipeline switch and blanks every key, so a developer's `.env` cannot leak into the suite).
+
+### Step 49 — ESRGAN Upscaler Trained from Scratch
+
+**Status: ✅ Completed (2026-10-09).**
+
+- `app/ml/sr/`: RRDBNet generator (16 blocks, pixel-unshuffle for 2×) and a spectral-norm U-Net discriminator, written in plain PyTorch (`basicsr` is incompatible with torchvision 0.28). Loss: L1 + VGG19 perceptual + adversarial (Real-ESRGAN weights 1 / 1 / 0.1). Low-resolution training inputs are synthesised with random blur, downscale filter, noise and JPEG.
+- **Data:** 19,813 real 512px shoe photos (198 held out by filename hash), downloaded with `fetch_amazon_training_images.py --size 512`.
+- **Training:** 15,000 L1 steps + 35,000 GAN steps, batch 16, on the local RTX 4050. One crash at step ~9,000 (system RAM exhausted by concurrent jobs) was recovered with `--resume` from the step-5,000 checkpoint.
+- **Result vs bicubic** on 100 held-out photos: PSNR 29.67 → 30.91, SSIM 0.869 → 0.881, VGG perceptual distance 6.21 → 4.46 (−28%). On real FastGAN output: FID against real 512px photos 274.8 → 251.3, but it also sharpens the FastGAN's checkerboard artefacts. On diffusion renders (clean and photo-like) it sharpens material texture without artefacts.
+- **Use:** `SR_ENABLED` upscales any variant below `SR_TARGET_SIZE` (1024) once. With `DIFFUSION_OUTPUT_SIZE=512`, every render goes 512 → 1024 through the ESRGAN, at a third of the API cost of a 1024 render.
+- Tests: `tests/test_sr.py`. Scripts: `scripts/compare_upscalers.py`, `scripts/watch_esrgan.py`.
+
+### Step 50 — Persona Reactions Grounded in the Image and Real Reviews
+
+**Status: ✅ Completed (2026-10-12).**
+
+- The persona prompt now names the product (brand, category, description). Previously personas reacted to "design variation 2" without knowing it was a shoe.
+- **Vision** (`LLM_VISION`): `LLMProvider.complete(prompt, images=...)` for both Ollama and Anthropic; the variant image is attached.
+- **Hosted model:** `gemma4:31b-cloud` via Ollama Cloud's free tier (the only free cloud model with vision); `OLLAMA_API_KEY` supports direct hosted access. Ollama Cloud ignores the JSON-schema `format` field; the existing code-fence-tolerant parser handles its replies.
+- **Review grounding:** Step 44.
+- **Measured** (`scripts/compare_persona_prompts.py`, 5 personas × 3 variants, each prompt sent twice): on gemma4, personas were more distinct than on local llama3.1:8b (similarity 0.456 vs 0.668), more stable on re-run (drift 0.03–0.04 vs 0.08–0.14), and adding reviews raised concrete product aspects per reaction from 1.13 to 2.13, with no copying or brand leaks. With the image attached, every persona rated the old FastGAN-only variants 0.0 ("looks like an ink blot") — the evidence that motivated Step 48.
+- Tests: `tests/test_persona_grounding.py`.
+
+### Step 51 — Business-Facing Results (Dashboard, PDF, CSV)
+
+**Status: ✅ Completed (2026-10-13).**
+
+- `app/services/insights_service.py` restates a completed simulation for business readers and backs all three outputs: a verdict; the real average purchase likelihood (the stored "PMF score" is min-max normalised and always rates the best option 100, even when nobody wanted it); "N of M customer profiles would likely buy"; who each option appeals to; topics customers raised; plain-language concerns, including a price-objection check; best and worst quotes; next steps; and a disclaimer that the customers are simulated.
+- The system's own recommendation is kept; when another option had higher purchase likelihood, the summary explains why.
+- Sentiment is labelled as the **tone** of a comment (positive / neutral / critical), since it measures the comment, not purchase intent. Colourways are named from the generated image's pixels, because the requested colour is not always what the model drew.
+- Frontend: the sentiment pie chart and the 0–100 gauge are replaced by labelled bars; FID, the engagement score, rule names and IDs are no longer shown. The PDF and CSV are rewritten in the same terms.
+- Tests: `tests/test_insights.py` (wording, counts, colour naming, and that the reports contain no IDs, FID or score internals).
+
+---
+
 # 5. Dependency Order
 
 ```
@@ -2429,18 +2497,20 @@ Testing is embedded per-step (every step in Section 4 specifies its own Verifica
 
 # 10. Final Definition of Done
 
+> **Status 2026-10-13:** 10 of 11 items verified. The open item is live deployment and production verification (Steps 42–43).
+
 The certified-scope MVP (Phases 1–16) is done when every item below is true. Phase 17 items are explicitly **not** required for this checklist.
 
-- [ ] All 10 certified Functional Requirements (PRD §9) are implemented and demonstrable: registration/login, product upload, scenario configuration, GAN generation, persona simulation, sentiment analysis, risk detection, feedback optimization, dashboard, final recommendation.
-- [ ] All 7 class-diagram entities (PRD §12/Fig 6.3) are correctly persisted and related, with the one documented elaboration (`ProductVariant`) and the one documented simplification (`Admin` as a `User.role`) both traceable back to this document's rationale.
-- [ ] A user can complete the full journey — register → upload → configure → simulate → view dashboard → download report — through the real UI against the real backend, with no manual database intervention required at any step.
-- [ ] The optimization loop respects its documented stopping criteria (max-iterations or score-plateau) on every run; no simulation can loop indefinitely or terminate before at least one full evaluation.
-- [ ] Product-market-fit scoring is correctly implemented as the documented aggregate-persona metric (Decision #9) — no undocumented economic-model behavior is silently present or absent.
-- [ ] Generated variants have both a realism score (FID) and, for a sample of persona responses, a consistency-variance signal — the evaluation gap flagged in PRD §31 is closed at MVP scope, not left open.
-- [ ] The dataset-pipeline ingestion script runs successfully against currently-available data (fixtures today, real data once externally produced) and populates all five reference tables idempotently.
-- [ ] Full automated test suite (Step 38) and end-to-end test (Step 39) pass; security review checklist (Step 40) is fully checked off with no open findings.
-- [ ] System is deployed, publicly reachable over HTTPS, backed by a managed database with backups enabled, and has had at least one successful real (non-mocked) end-to-end simulation run verified in production (Step 43).
-- [ ] No secrets are present anywhere in version control, at any commit.
-- [ ] Every decision in "Decisions This Document Resolves" (top of this file) has been implemented as stated, or any deviation is itself documented with equivalent rationale.
+- [x] All 10 certified Functional Requirements (PRD §9) are implemented and demonstrable: registration/login, product upload, scenario configuration, GAN generation, persona simulation, sentiment analysis, risk detection, feedback optimization, dashboard, final recommendation. *(Verified: Steps 8–37; full journey re-run 2026-10-13.)*
+- [x] All 7 class-diagram entities (PRD §12/Fig 6.3) are correctly persisted and related, with the one documented elaboration (`ProductVariant`) and the one documented simplification (`Admin` as a `User.role`) both traceable back to this document's rationale. *(Verified: Steps 5–7.)*
+- [x] A user can complete the full journey — register → upload → configure → simulate → view dashboard → download report — through the real UI against the real backend, with no manual database intervention required at any step. *(Verified: real browser run with real GAN + LLM, `REPORT.md` §10; repeated through the API with the hybrid pipeline on 2026-10-13.)*
+- [x] The optimization loop respects its documented stopping criteria (max-iterations or score-plateau) on every run; no simulation can loop indefinitely or terminate before at least one full evaluation. *(Verified: Step 26 scenarios; `tests/test_optimization_service.py`.)*
+- [x] Product-market-fit scoring is correctly implemented as the documented aggregate-persona metric (Decision #9) — no undocumented economic-model behavior is silently present or absent. *(Verified: Step 29. Since Step 51 the business views show the absolute average purchase likelihood alongside it.)*
+- [x] Generated variants have both a realism score (FID) and, for a sample of persona responses, a consistency-variance signal — the evaluation gap flagged in PRD §31 is closed at MVP scope, not left open. *(Verified: Steps 18 and 22.)*
+- [x] The dataset-pipeline ingestion script runs successfully against currently-available data (fixtures today, real data once externally produced) and populates all five reference tables idempotently. *(Verified: 730,713 real rows ingested, 2026-09-19.)*
+- [x] Full automated test suite (Step 38) and end-to-end test (Step 39) pass; security review checklist (Step 40) is fully checked off with no open findings. *(Verified 2026-10-13: 159 passed, 1 skipped — the skip is the live-Ollama integration test when no local server answers. Step 40 completed; login rate limiting is a disclosed, unbuilt item.)*
+- [ ] System is deployed, publicly reachable over HTTPS, backed by a managed database with backups enabled, and has had at least one successful real (non-mocked) end-to-end simulation run verified in production (Step 43). *(**Not done.** Steps 42–43 open: `render.yaml` and `docs/deployment.md` exist, but `backend/entrypoint.sh` still downloads the superseded StyleGAN2 checkpoint, the FastGAN/ESRGAN weights need hosting, and production needs a hosted persona model — see `docs/deployment.md`.)*
+- [x] No secrets are present anywhere in version control, at any commit. *(Verified 2026-10-13: no `.env` file was ever committed; a scan of all 44 commits found no API keys or tokens and none of the live `.env` values, apart from the public placeholder `JWT_SECRET_KEY`, which must be replaced before deployment.)*
+- [x] Every decision in "Decisions This Document Resolves" (top of this file) has been implemented as stated, or any deviation is itself documented with equivalent rationale. *(Deviations documented in the 2026-09-24 and 2026-10-13 revision notes.)*
 
 When every box above is checked, the certified-scope DryRunAI system is complete. Phase 17 items remain available as clearly-optional, independently-addable future work — exactly as PRD.md's own Future Extensions (§36) and the Phase-3 architecture (§11) describe them.

@@ -113,7 +113,8 @@ def default_pipeline_settings(monkeypatch):
     fake_image_provider) turn it on explicitly after this runs."""
     for name, value in {
         "GENERATOR_BACKEND": "gan", "IMAGE_PROVIDER": None, "IMAGE_API_KEY": None, "IMAGE_MODEL": None,
-        "CLOUDFLARE_ACCOUNT_ID": None, "DIFFUSION_INIT": "seed", "DIFFUSION_OUTPUT_SIZE": 1024,
+        "CLOUDFLARE_ACCOUNT_ID": None, "DIFFUSION_INIT": "seed",  # hybrid tests exercise the GAN-candidate path; product path tested explicitly
+        "DIFFUSION_OUTPUT_SIZE": 1024,
         "DIFFUSION_STRENGTH": 0.55, "GAN_OVERSAMPLE": 3, "MAX_API_IMAGES_PER_SIMULATION": 24,
         "SR_ENABLED": False, "SR_UPSCALE_SEED": True, "SR_TARGET_SIZE": 1024,
         "LLM_VISION": False, "REVIEW_GROUNDING_ENABLED": False, "OLLAMA_API_KEY": None, "ANTHROPIC_API_KEY": None,

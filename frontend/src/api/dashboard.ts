@@ -48,6 +48,10 @@ export interface OptionInsight {
   variant_id: string
   label: string
   colourway: string
+  /** Dominant colour measured from the generated render, not from the
+   * colourway name. Null when the image could not be read -- the UI must
+   * show that as unmeasured rather than paint a guessed swatch. */
+  colourway_hex: string | null
   rank: number
   is_recommended: boolean
   purchase_intent_pct: number

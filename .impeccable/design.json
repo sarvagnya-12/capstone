@@ -1,0 +1,386 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-28T00:00:00Z",
+  "title": "Design System: DryRunAI",
+  "extensions": {
+    "colorMeta": {
+      "slate": {
+        "role": "primary",
+        "displayName": "Sample-Room Slate",
+        "canonical": "#2c3836",
+        "tonalRamp": [
+          "#0c100f",
+          "#161d1c",
+          "#202a28",
+          "#2c3836",
+          "#3b4a47",
+          "#566a66",
+          "#80918c",
+          "#b9c5c1",
+          "#e4eae8"
+        ]
+      },
+      "mark-green": {
+        "role": "secondary",
+        "displayName": "Stamp Green",
+        "canonical": "#1a6b41",
+        "tonalRamp": [
+          "#06180f",
+          "#0b2c1c",
+          "#114528",
+          "#1a6b41",
+          "#248a55",
+          "#3aa972",
+          "#6cc598",
+          "#a6dec1",
+          "#dcf2e6"
+        ]
+      },
+      "mark-amber": {
+        "role": "secondary",
+        "displayName": "Record Amber",
+        "canonical": "#8a5f17",
+        "tonalRamp": [
+          "#1c1304",
+          "#33230a",
+          "#4e3610",
+          "#6b4a14",
+          "#8a5f17",
+          "#ab7a2a",
+          "#c89f5e",
+          "#e0c79b",
+          "#f4e7d2"
+        ]
+      },
+      "mark-red": {
+        "role": "secondary",
+        "displayName": "Spec-Pencil Red",
+        "canonical": "#c0211c",
+        "tonalRamp": [
+          "#260605",
+          "#450c0a",
+          "#671311",
+          "#8e1a16",
+          "#c0211c",
+          "#d9453f",
+          "#e87b76",
+          "#f3ada9",
+          "#fbdedc"
+        ]
+      },
+      "bond": {
+        "role": "neutral",
+        "displayName": "Cool Bond (printed ground)",
+        "canonical": "#f1f3f1",
+        "tonalRamp": [
+          "#15191a",
+          "#272d2c",
+          "#3b4341",
+          "#545d5a",
+          "#747d79",
+          "#9ba39f",
+          "#c9cfcb",
+          "#e8ebe8",
+          "#f1f3f1"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Iron Ink",
+        "canonical": "#15191a",
+        "tonalRamp": [
+          "#090b0b",
+          "#15191a",
+          "#242a2b",
+          "#38403f",
+          "#4a5250",
+          "#6e7673",
+          "#9ba39f",
+          "#c9cfcb",
+          "#eef1ee"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Ink Secondary",
+        "canonical": "#4a5250",
+        "tonalRamp": [
+          "#0d100f",
+          "#1a1f1e",
+          "#2b322f",
+          "#3b4341",
+          "#4a5250",
+          "#6e7673",
+          "#97a09c",
+          "#c2c9c5",
+          "#e7eae8"
+        ]
+      },
+      "sheet": {
+        "role": "neutral",
+        "displayName": "Sheet Off-White",
+        "canonical": "#fafbf8"
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "Field Grey",
+        "canonical": "#e8ebe8"
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#c9cfcb"
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Rule Strong",
+        "canonical": "#9ba39f"
+      },
+      "slate-2": {
+        "role": "primary",
+        "displayName": "Slate Shade",
+        "canonical": "#3b4a47"
+      },
+      "slate-ink": {
+        "role": "neutral",
+        "displayName": "Slate Ink",
+        "canonical": "#eef1ee"
+      },
+      "slate-ink-2": {
+        "role": "neutral",
+        "displayName": "Slate Ink Secondary",
+        "canonical": "#a9b6b2"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Finding",
+        "purpose": "The verdict line at the top of a results sheet. One per screen."
+      },
+      "headline": {
+        "displayName": "Page title",
+        "purpose": "The name of the screen."
+      },
+      "title": {
+        "displayName": "Option title",
+        "purpose": "A colourway name or an empty-state heading."
+      },
+      "body": {
+        "displayName": "Prose",
+        "purpose": "All sentences, capped at a 68ch measure."
+      },
+      "label": {
+        "displayName": "Legend",
+        "purpose": "Section headings, field labels, table headers, state words."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Run identifiers, option codes, subject numbers — anything cited out loud."
+      },
+      "quantity": {
+        "displayName": "Quantity",
+        "purpose": "Every number, in tabular figures."
+      }
+    },
+    "fonts": [
+      {
+        "family": "Archivo",
+        "self_hosted": true,
+        "files": [
+          "/fonts/archivo-latin.woff2",
+          "/fonts/archivo-latin-ext.woff2"
+        ],
+        "axes": {
+          "wght": "400 700",
+          "wdth": "62% 125%"
+        },
+        "purpose": "One industrial grotesk supplying the label, prose and quantity voices from its width axis."
+      }
+    ],
+    "shadows": [],
+    "shadowPolicy": "No shadows exist in this system. Depth is the tonal step from bond ground to sheet white, plus a 1px rule. Heavier 3px rules carry meaning (a finding's head, a recommended stamp, an alert), never elevation.",
+    "textures": [
+      {
+        "name": "hatch",
+        "value": "repeating-linear-gradient(45deg, #9ba39f 0 1.5px, transparent 1.5px 5px)",
+        "purpose": "Anything unmeasured, unavailable, or in conflict. Survives greyscale, projection and colour blindness, which a grey fill does not."
+      },
+      {
+        "name": "doodle-ground",
+        "value": "240px SVG tile of 10 outline shoe motifs rendered at background-size 165px; far layer stroke #e3e7e2 at 1.5, near layer stroke #d0d6d0 at 1.25; scales 0.50-1.15",
+        "purpose": "The bond stock is printed. Tonal not chromatic, one step off the bond, visible only in the margins because every sheet is opaque. Motifs are collision-packed on a torus so none overlap and the tile repeats seamlessly. Never built from the hatch: hatch means unmeasured."
+      }
+    ],
+    "motion": [
+      {
+        "name": "rule-in",
+        "value": "transform: scaleX(0 -> 1); 420ms cubic-bezier(0.16, 1, 0.3, 1); transform-origin: left",
+        "purpose": "A stage's rule drawn once, only when it completes while the reader is watching. Stages already done at mount are ruled statically via .done without .just-done."
+      },
+      {
+        "name": "rule-travel",
+        "value": "background-position: 0% -> 100%; 1600ms cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; background-size: 28% 100%",
+        "purpose": "The active stage's rule, a short segment passing back and forth. Reports that a multi-minute run is working. Alternates so the loop has no seam; pauses via [data-page-hidden='true']."
+      },
+      {
+        "name": "rule-breathe",
+        "value": "opacity: 0.2 -> 0.85; 2400ms ease-in-out infinite",
+        "purpose": "The reduced-motion stand-in for rule-travel. Non-spatial, so the 'still working' signal survives without movement."
+      },
+      {
+        "name": "scope-in",
+        "value": "opacity: 0 -> 1; 160ms ease-out",
+        "purpose": "Acknowledges scoping the results sheet to one option. Keyed off a scope counter so it never runs on first paint."
+      },
+      {
+        "name": "control-feedback",
+        "value": "background-color, border-color, color, box-shadow, text-decoration-color 120ms ease",
+        "purpose": "The only transition on controls. Colour only: nothing on this sheet lifts, grows or slides under the pointer."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "narrow",
+        "value": "900px"
+      },
+      {
+        "name": "mobile",
+        "value": "600px"
+      }
+    ],
+    "designTarget": "1280–1536px laptop, driven live. No layout breakpoint inside that band.",
+    "theme": "Light only. color-scheme is light; there is no dark inversion, because the use scene is a lit desk and an unverified second theme drifts.",
+    "motionPolicy": "One material: the rule. Motion is a rule being drawn, traversed, or held, plus 120ms colour feedback. Nothing animates on arrival and nothing changes size or position. Under prefers-reduced-motion, travel and drawing stop while colour feedback and the breathing active rule remain."
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The committing action on a sheet: run a simulation, pull a report.",
+      "html": "<button class=\"ds-btn\">Run simulation</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; gap: 0.375rem; font-family: Archivo, system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; font-stretch: 80%; letter-spacing: 0.02em; padding: 0.4375rem 0.875rem; border: 1px solid #15191a; border-radius: 0; background: #15191a; color: #fff; cursor: pointer; } .ds-btn:hover { background: #2c3836; border-color: #2c3836; } .ds-btn:active { background: #3b4a47; } .ds-btn:focus-visible { outline: 2px solid #15191a; outline-offset: 2px; } .ds-btn:disabled { background: #e8ebe8; border-color: #9ba39f; color: #4a5250; cursor: not-allowed; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "The alternate action beside a primary one.",
+      "html": "<button class=\"ds-btn-secondary\">Data (CSV)</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; gap: 0.375rem; font-family: Archivo, system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; font-stretch: 80%; padding: 0.4375rem 0.875rem; border: 1px solid #15191a; border-radius: 0; background: transparent; color: #15191a; cursor: pointer; } .ds-btn-secondary:hover { background: #e8ebe8; } .ds-btn-secondary:focus-visible { outline: 2px solid #15191a; outline-offset: 2px; }"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Every text, number and select control. States are printed marks, not colour washes.",
+      "html": "<span class=\"ds-field\"><label for=\"ds-tier\">Tier name</label><input id=\"ds-tier\" value=\"standard\" /></span>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 0.3125rem; font-family: Archivo, system-ui, sans-serif; } .ds-field label { font-size: 0.6875rem; font-weight: 600; font-stretch: 70%; text-transform: uppercase; letter-spacing: 0.1em; color: #4a5250; } .ds-field input { font: inherit; font-size: 0.9375rem; padding: 0.4375rem 0.5rem; border: 1px solid #9ba39f; border-radius: 0; background: #fff; color: #15191a; } .ds-field input:hover { border-color: #4a5250; } .ds-field input:focus-visible { outline: 2px solid #15191a; outline-offset: 1px; border-color: #15191a; } .ds-field input[aria-invalid=\"true\"] { border-color: #c0211c; border-left-width: 3px; }"
+    },
+    {
+      "name": "Colourway Chip",
+      "kind": "custom",
+      "refersTo": "swatch",
+      "description": "The signature: one generated option, painted in the colour measured from its own render. Hatched when unmeasurable.",
+      "html": "<button class=\"ds-swatch ds-swatch-recommended\" aria-pressed=\"true\"><span class=\"ds-swatch-colour\" style=\"background:#1f3a6d\"></span><span class=\"ds-swatch-body\"><span class=\"ds-swatch-code\">Option B · recommended</span><span class=\"ds-swatch-name\">Dark blue colourway</span><span class=\"ds-swatch-figure\"><span class=\"ds-swatch-pct\">71%</span><span class=\"ds-swatch-legend\">would buy</span></span></span></button>",
+      "css": ".ds-swatch { display: flex; flex-direction: column; width: 13rem; padding: 0; background: transparent; border: 1px solid #9ba39f; border-radius: 0; cursor: pointer; text-align: left; font-family: Archivo, system-ui, sans-serif; } .ds-swatch:hover { border-color: #15191a; } .ds-swatch[aria-pressed=\"true\"] { border-color: #15191a; box-shadow: inset 0 0 0 2px #15191a; } .ds-swatch:focus-visible { outline: 2px solid #15191a; outline-offset: 2px; } .ds-swatch-colour { display: block; height: 4.5rem; border-bottom: 1px solid #9ba39f; } .ds-swatch-recommended .ds-swatch-colour { border-bottom: 3px solid #1a6b41; } .ds-swatch-body { display: flex; flex-direction: column; flex: 1; padding: 0.5rem 0.625rem 0.625rem; background: #fff; } .ds-swatch-code { display: block; font-size: 0.75rem; font-weight: 600; font-stretch: 62%; text-transform: uppercase; letter-spacing: 0.09em; color: #4a5250; } .ds-swatch-name { display: block; font-size: 0.875rem; color: #15191a; margin: 0.125rem 0 0.375rem; } .ds-swatch-figure { display: flex; align-items: baseline; gap: 0.25rem; margin-top: auto; padding-top: 0.375rem; } .ds-swatch-pct { font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; color: #1a6b41; } .ds-swatch-legend { font-size: 0.6875rem; font-weight: 600; font-stretch: 70%; text-transform: uppercase; letter-spacing: 0.1em; color: #4a5250; }"
+    },
+    {
+      "name": "Unmeasured Colourway Chip",
+      "kind": "custom",
+      "refersTo": "swatch",
+      "description": "The same chip when the render could not be measured. The hatch is the claim: no colour is guessed.",
+      "html": "<button class=\"ds-swatch-u\"><span class=\"ds-swatch-u-colour\"></span><span class=\"ds-swatch-u-body\"><span class=\"ds-swatch-u-code\">Option D</span><span class=\"ds-swatch-u-name\">A green-toned colourway — colour not measured</span></span></button>",
+      "css": ".ds-swatch-u { display: flex; flex-direction: column; width: 13rem; padding: 0; background: transparent; border: 1px solid #9ba39f; border-radius: 0; cursor: pointer; text-align: left; font-family: Archivo, system-ui, sans-serif; } .ds-swatch-u-colour { display: block; height: 4.5rem; border-bottom: 1px solid #9ba39f; background-color: #e8ebe8; background-image: repeating-linear-gradient(45deg, #9ba39f 0 1.5px, transparent 1.5px 5px); } .ds-swatch-u-body { padding: 0.5rem 0.625rem 0.625rem; background: #fff; } .ds-swatch-u-code { display: block; font-size: 0.75rem; font-weight: 600; font-stretch: 62%; text-transform: uppercase; letter-spacing: 0.09em; color: #4a5250; } .ds-swatch-u-name { display: block; font-size: 0.875rem; color: #15191a; margin-top: 0.125rem; }"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge-recommended",
+      "description": "A printed mark on a row or an option. Only the recommended badge fills.",
+      "html": "<span class=\"ds-badge ds-badge-rec\">Recommended</span> <span class=\"ds-badge ds-badge-warn\">Undecided 52%</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.0625rem 0.375rem; border: 1px solid currentColor; border-radius: 0; font-family: Archivo, system-ui, sans-serif; font-size: 0.6875rem; font-weight: 700; font-stretch: 70%; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; } .ds-badge-rec { background: #1a6b41; border-color: #1a6b41; color: #fff; } .ds-badge-warn { color: #8a5f17; }"
+    },
+    {
+      "name": "Stage Row",
+      "kind": "custom",
+      "refersTo": "app-header",
+      "description": "The run record. A completed stage draws its own stamp-green rule, the system's only authored motion.",
+      "html": "<ul class=\"ds-stages\"><li class=\"ds-stage ds-stage-done\"><span class=\"ds-stage-mark\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"square\"><path d=\"M3 8.5 6.25 11.75 13 5\"/></svg></span><span>Generating product variants</span><span class=\"ds-stage-state\">done</span></li><li class=\"ds-stage ds-stage-active\"><span class=\"ds-stage-mark\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"square\"><path d=\"M2 8h10\"/><path d=\"M8.75 4.75 12 8l-3.25 3.25\"/></svg></span><span>Simulating persona reactions</span><span class=\"ds-stage-state\">working</span></li></ul>",
+      "css": ".ds-stages { list-style: none; margin: 0; padding: 0; border-top: 1px solid #c9cfcb; font-family: Archivo, system-ui, sans-serif; } .ds-stage { display: grid; grid-template-columns: 1.25rem 1fr max-content; align-items: center; gap: 0.625rem; padding: 0.625rem 0; border-bottom: 1px solid #c9cfcb; position: relative; color: #15191a; } .ds-stage-mark { display: flex; align-items: center; justify-content: center; color: #4a5250; } .ds-stage-done .ds-stage-mark { color: #1a6b41; } .ds-stage-done::after { content: ''; position: absolute; inset-inline: 0; bottom: -1px; height: 1px; background: #1a6b41; transform-origin: left; animation: ds-rule-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both; } @keyframes ds-rule-in { from { transform: scaleX(0); } to { transform: scaleX(1); } } .ds-stage-state { font-size: 0.6875rem; font-weight: 600; font-stretch: 70%; text-transform: uppercase; letter-spacing: 0.1em; color: #4a5250; }"
+    },
+    {
+      "name": "Header Band",
+      "kind": "nav",
+      "refersTo": "app-header",
+      "description": "The shell's committed colour field, carrying the product name and the live run identifier.",
+      "html": "<header class=\"ds-header\"><span class=\"ds-header-left\"><a href=\"#\" class=\"ds-brand\">DryRunAI</a><span class=\"ds-run\">RUN 4F2A91C3</span></span><nav class=\"ds-nav\"><a href=\"#\">Products</a><a href=\"#\" aria-current=\"page\">Simulations</a></nav></header>",
+      "css": ".ds-header { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 0.625rem 1.5rem; background: #2c3836; color: #eef1ee; border-bottom: 3px solid #15191a; font-family: Archivo, system-ui, sans-serif; } .ds-header-left { display: flex; align-items: center; gap: 1.25rem; } .ds-brand { font-size: 1.0625rem; font-weight: 700; font-stretch: 70%; text-transform: uppercase; letter-spacing: 0.14em; color: #eef1ee; text-decoration: none; } .ds-run { font-size: 0.75rem; font-weight: 600; font-stretch: 62%; text-transform: uppercase; letter-spacing: 0.09em; color: #a9b6b2; } .ds-nav { display: flex; gap: 1.25rem; } .ds-nav a { color: #eef1ee; font-size: 0.875rem; font-stretch: 80%; text-decoration: none; padding-bottom: 2px; border-bottom: 2px solid transparent; } .ds-nav a:hover { border-bottom-color: #a9b6b2; } .ds-nav a[aria-current=\"page\"] { border-bottom-color: #eef1ee; }"
+    },
+    {
+      "name": "Line Listing",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The comparison table: tabular figures, dimensionally honest bars, a stamped recommended row.",
+      "html": "<table class=\"ds-table\"><thead><tr><th>Option</th><th class=\"ds-num\">Avg. would buy</th></tr></thead><tbody><tr class=\"ds-row-rec\"><td><span class=\"ds-code\">Option B</span></td><td class=\"ds-num\"><span class=\"ds-bar\"><span style=\"width:71%;background:#1a6b41\"></span></span><span class=\"ds-qty\">71%</span></td></tr></tbody></table>",
+      "css": ".ds-table { width: 100%; border-collapse: collapse; font-family: Archivo, system-ui, sans-serif; background: #fff; } .ds-table th, .ds-table td { text-align: left; padding: 0.5rem 0.625rem; border-bottom: 1px solid #c9cfcb; font-size: 0.875rem; vertical-align: top; color: #15191a; } .ds-table thead th { font-size: 0.6875rem; font-weight: 700; font-stretch: 70%; text-transform: uppercase; letter-spacing: 0.09em; color: #4a5250; border-bottom: 1px solid #9ba39f; } .ds-num { text-align: right; font-variant-numeric: tabular-nums; } .ds-row-rec td { background: #1a6b410f; } .ds-table tbody tr:hover td { background: #e8ebe8; } .ds-code { font-size: 0.75rem; font-weight: 600; font-stretch: 62%; text-transform: uppercase; letter-spacing: 0.09em; } .ds-bar { display: block; height: 4px; width: 9rem; margin-left: auto; background: #e8ebe8; border: 1px solid #c9cfcb; } .ds-bar > span { display: block; height: 100%; } .ds-qty { font-weight: 600; font-variant-numeric: tabular-nums; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Colourway Spec Sheet",
+    "overview": "This is the sheet a footwear developer marks up, not a dashboard. Everything on screen behaves like a working document: cool bond stock, hairline rules, tracked condensed codes in the margins, and quantities set in tabular figures so a column of numbers lines up and can be compared down the page. The reader is an examiner driving the app live while questioning the team, so the sheet is built to be cited out loud — every run, option and customer profile carries a short printed identifier, and every figure sits next to the thing it describes.\n\nColour on this surface belongs to the data. Besides three marking inks, the only saturated colour anywhere is a generated variant's own measured colourway, sampled from the render by the backend and painted into its chip. That rule is what makes the system honest at a glance: when the pipeline could not read an image, its chip is hatched rather than filled with a plausible guess. The shell takes a deep sample-room slate that owns a real region of the screen, so the page is never a grey screen with one accent colour.\n\nThe system is deliberately flat — no shadows anywhere. Depth comes from a one-pixel rule and the tonal step between bond and sheet. Light is canonical and there is no dark inversion: the use scene is a lit desk, read against physical chips. Confirmed anti-references: the AI-product aesthetic and the enterprise BI dashboard. The second matters most, because this system looks superficially like a data product and must never become one: a control room reads one live run; a BI dashboard tiles many metrics for scanning.",
+    "keyCharacteristics": [
+      "Measured and plain — nothing shouts; the figures do the talking.",
+      "Precise and instrumented — tabular numerals, exact percentages, dimensionally honest bars.",
+      "Warm in language, exact in presentation — plain business sentences, never softened numbers.",
+      "Flat, ruled, zero-radius; chips are the only rounded objects.",
+      "Chroma is data; the interface itself is near-monochrome."
+    ],
+    "rules": [
+      {
+        "name": "The Measured Colour Rule",
+        "body": "The only saturated colour on a results screen besides the three marking inks is a variant's own colourway, and it comes from colourway_hex — measured from the render. If that value is null the chip is hatched and labelled \"colour not measured.\" Never infer a swatch from a colour's name.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three Inks Rule",
+        "body": "Green, amber and red mean confirmed, undecided and critical. They are never used decoratively, never tinted down to soften a result, and no fourth accent is added.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "Every figure renders with tabular-nums. Numbers in a column must align digit for digit; a reader comparing options should never re-find the decimal.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Eyebrow Rule",
+        "body": "A heading carries its own weight. No small label sits above a heading to introduce it — context goes into a ruled field block underneath, where it is a fact with a name rather than decoration.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hatch Rule",
+        "body": "Anything unmeasured, unavailable or in conflict renders as a 45-degree hairline hatch, never as a colour. Hatch survives greyscale, a projector and colour blindness, which a grey fill does not.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do paint a colourway swatch only from colourway_hex; hatch it when that value is null.",
+      "Do set every figure in tabular numerals, and put the number next to the thing it measures.",
+      "Do size every bar and segment to its real value, with the written count beside it.",
+      "Do print a citable identifier — run, option, subject — wherever a figure can be asked about.",
+      "Do keep colour on the data: slate for the shell, three inks for meaning, variant colour for variants.",
+      "Do state what the system does not know, in the place the reader would otherwise assume it does.",
+      "Do give every control its hover, focus-visible, disabled, loading, error and empty state."
+    ],
+    "donts": [
+      "Don't add a shadow. Depth is the tonal step and the hairline.",
+      "Don't put a small label above a heading. The heading speaks for itself.",
+      "Don't introduce a fourth accent colour, or tint a marking ink to soften a result.",
+      "Don't render a figure that did not come from an API response — including in empty and loading states.",
+      "Don't nest a bordered box inside a bordered box.",
+      "Don't reach for a chart library. The written numbers and the ruled bar are the chart.",
+      "Don't use a Unicode glyph as an icon. Marks are drawn SVG at 1.5 stroke in a 16px box.",
+      "Don't imply the system covers categories beyond footwear."
+    ]
+  }
+}
